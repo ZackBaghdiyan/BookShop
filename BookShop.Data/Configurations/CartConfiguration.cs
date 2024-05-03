@@ -1,0 +1,28 @@
+﻿using BookShop.Data.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace BookShop.Data.Configurations;
+
+public class CartConfiguration : IEntityTypeConfiguration<Cart>
+{
+    public void Configure(EntityTypeBuilder<Cart> builder)
+    {
+        builder.HasKey(c => c.Id);
+
+        builder
+            .HasIndex(c => new { c.ClientId, c.ProductId });
+
+        builder
+            .HasOne(c => c.Client)
+            .WithMany(cl => cl.Carts)
+            .HasForeignKey(c => c.ClientId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder
+            .HasOne(c => c.Product)
+            .WithMany(p => p.Carts)
+            .HasForeignKey(c => c.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
