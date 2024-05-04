@@ -1,6 +1,6 @@
 ﻿namespace BookShop.Data
 {
-    public class Class1
+    public class TestChange
     {
 
     }
