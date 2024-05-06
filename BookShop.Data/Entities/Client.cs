@@ -4,14 +4,15 @@ namespace BookShop.Data.Entities;
 
 public class Client : IIdentifiable
 {
-    public int Id { get; set; }
-    public string Name { get; set; } = null!;
+    public long Id { get; set; }
+    public string FirstName { get; set; } = null!;
+    public string LastName { get; set; } = null!;
+    public string Address { get; set; } = null!;
     public string Password { get; set; } = null!;
     public string Email { get; set; } = null!;
-
-    public List<PaymentMethod>? PaymentMethods { get; set; }
-    public List<WishList>? WishLists { get; set; }
-    public List<Cart>? Carts { get; set; }
-    public List<Order>? Orders { get; set; }
-    public List<Invoice>? Invoices { get; set; }
+    public List<PaymentMethod> PaymentMethods { get; set; } = new();
+    public List<WishListItem> WishLists { get; set; } = new();
+    public List<CartItem> CartItems { get; set; } = new();
+    public List<Order> Orders { get; set; } = new();
+    public List<Invoice> Invoices { get; set; } = new();
 }
