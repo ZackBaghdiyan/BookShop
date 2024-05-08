@@ -1,5 +1,8 @@
-﻿namespace BookShop.Services.Abstractions;
+﻿using BookShop.Data.Entities;
 
-public interface IClientService
+namespace BookShop.Services.Abstractions;
+
+public interface IClientService : IEntityService<Client>
 {
+
 }
