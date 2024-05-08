@@ -2,8 +2,10 @@
 
 namespace BookShop.Data.Entities;
 
-public class Cart : IIdentifiable
+public class CartEntity : IIdentifiable
 {
     public long Id { get; set; }
+    public long ClientId { get; set; }
+    public ClientEntity? Client { get; set; }
     public List<CartItem> CartItems { get; set; } = new();
 }
