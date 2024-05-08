@@ -4,25 +4,10 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BookShop.Data.Configurations;
 
-public class ClientConfiguration : IEntityTypeConfiguration<Client>
+public class ClientConfiguration : IEntityTypeConfiguration<ClientEntity>
 {
-    public void Configure(EntityTypeBuilder<Client> builder)
+    public void Configure(EntityTypeBuilder<ClientEntity> builder)
     {
         builder.HasKey(c => c.Id);
-        builder.HasMany(c => c.PaymentMethods)
-            .WithOne(pm => pm.Client)
-            .HasForeignKey(pm => pm.ClientId);
-        builder.HasMany(c => c.WishLists)
-            .WithOne(wl => wl.Client)
-            .HasForeignKey(wl => wl.ClientId);
-        builder.HasMany(c => c.CartItems)
-            .WithOne(ci => ci.Client)
-            .HasForeignKey(ci => ci.ClientId);
-        builder.HasMany(c => c.Orders)
-            .WithOne(o => o.Client)
-            .HasForeignKey(o => o.ClientId);
-        builder.HasMany(c => c.Invoices)
-            .WithOne(i => i.Client)
-            .HasForeignKey(i => i.ClientId);
     }
 }
