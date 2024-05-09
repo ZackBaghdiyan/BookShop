@@ -1,6 +1,6 @@
 ﻿namespace BookShop.Api.Models.ClientModels;
 
-public class ClientPUTModel
+public class ClientPutModel
 {
     public string FirstName { get; set; } = null!;
     public string LastName { get; set; } = null!;

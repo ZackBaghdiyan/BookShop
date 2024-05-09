@@ -31,6 +31,7 @@ internal class ClientService : IClientService
         catch (Exception ex)
         {
             _loggerService.LogError(ex, $"Error occurred while adding client.");
+            throw;
         }
     }
 
@@ -110,6 +111,7 @@ internal class ClientService : IClientService
             {
                 builder.Append(hashedBytes[i].ToString("x2"));
             }
+
             return builder.ToString();
         }
     }

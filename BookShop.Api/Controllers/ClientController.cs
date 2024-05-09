@@ -20,7 +20,7 @@ public class ClientController : ControllerBase
     }
 
     [HttpDelete]
-    public async Task<ActionResult> RemoveClient(ClientDELETEModel clientInput)
+    public async Task<ActionResult> RemoveClient(ClientDeleteModel clientInput)
     {
         var client = _mapper.Map<ClientEntity>(clientInput);
         await _clientService.RemoveAsync(client);
@@ -29,7 +29,7 @@ public class ClientController : ControllerBase
     }
 
     [HttpPut]
-    public async Task<ActionResult> UpdateClient(ClientPUTModel clientInput)
+    public async Task<ActionResult> UpdateClient(ClientPutModel clientInput)
     {
         var client = _mapper.Map<ClientEntity>(clientInput);
         await _clientService.UpdateAsync(client);
@@ -38,7 +38,7 @@ public class ClientController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult> RegisterClient(ClientPOSTModel clientInput)
+    public async Task<ActionResult> RegisterClient(ClientPostModel clientInput)
     {
         var client = _mapper.Map<ClientEntity>(clientInput);
         await _clientService.RegisterAsync(client);
