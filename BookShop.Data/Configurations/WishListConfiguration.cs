@@ -10,8 +10,8 @@ public class WishListConfiguration : IEntityTypeConfiguration<WishListEntity>
     {
         builder.HasKey(wl => wl.Id);
 
-        builder.HasOne(wl => wl.Client)
-               .WithOne(c => c.WishList)
+        builder.HasOne(wl => wl.ClientEntity)
+               .WithOne(c => c.WishListEntity)
                .HasForeignKey<WishListEntity>(wl => wl.ClientId);
     }
 }

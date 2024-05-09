@@ -11,7 +11,7 @@ public class InvoiceEntity : IIdentifiable
     public DateTimeOffset CreatedAt { get; set; }
     public decimal TotalAmount { get; set; }
     public bool IsPaid { get; set; }
-    public PaymentEntity? Payment { get; set; }
-    public OrderEntity? Order { get; set; }
-    public ClientEntity? Client { get; set; }
+    public PaymentEntity? PaymentEntity { get; set; }
+    public OrderEntity? OrderEntity { get; set; }
+    public ClientEntity? ClientEntity { get; set; }
 }

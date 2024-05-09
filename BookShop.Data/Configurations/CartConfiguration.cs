@@ -11,7 +11,7 @@ public class CartConfiguration : IEntityTypeConfiguration<CartEntity>
         builder.HasKey(c => c.Id);
 
         builder.HasOne(c => c.Client)
-               .WithOne(cl => cl.Cart)
+               .WithOne(cl => cl.CartEntity)
                .HasForeignKey<CartEntity>(c => c.ClientId);
     }
 }
