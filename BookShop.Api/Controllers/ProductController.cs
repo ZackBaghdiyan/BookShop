@@ -22,7 +22,7 @@ public class ProductController : ControllerBase
 
     [Authorize]
     [HttpPost]
-    public async Task<ActionResult<ProductEntity>> AddProduct(ProductPOSTModel productInput)
+    public async Task<ActionResult<ProductEntity>> AddProduct(ProductPostModel productInput)
     {
         var productToAdd = _mapper.Map<ProductEntity>(productInput);
         await _productService.AddAsync(productToAdd);
@@ -31,7 +31,7 @@ public class ProductController : ControllerBase
 
     [Authorize]
     [HttpPut]
-    public async Task<ActionResult<ProductEntity>> UpdateProduct(ProductPUTModel productInput)
+    public async Task<ActionResult<ProductEntity>> UpdateProduct(ProductPutModel productInput)
     {
         var productToUpdate = _mapper.Map<ProductEntity>(productInput);
         productToUpdate = await _productService.UpdateAsync(productToUpdate); 

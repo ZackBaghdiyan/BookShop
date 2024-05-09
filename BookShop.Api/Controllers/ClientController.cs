@@ -20,10 +20,9 @@ public class ClientController : ControllerBase
     }
 
     [HttpDelete]
-    public async Task<ActionResult> RemoveClient(ClientDeleteModel clientInput)
+    public async Task<ActionResult> RemoveClient(long clientId)
     {
-        var client = _mapper.Map<ClientEntity>(clientInput);
-        await _clientService.RemoveAsync(client);
+        await _clientService.RemoveAsync(clientId);
 
         return Ok();
     }
