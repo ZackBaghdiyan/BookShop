@@ -9,5 +9,8 @@ public class ClientConfiguration : IEntityTypeConfiguration<ClientEntity>
     public void Configure(EntityTypeBuilder<ClientEntity> builder)
     {
         builder.HasKey(c => c.Id);
+
+        builder.HasIndex(c => c.Email)
+            .IsUnique();
     }
 }

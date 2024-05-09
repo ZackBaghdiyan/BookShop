@@ -10,11 +10,11 @@ public class OrderConfiguration : IEntityTypeConfiguration<OrderEntity>
     {
         builder.HasKey(o => o.Id);
 
-        builder.HasOne(o => o.Client)
+        builder.HasOne(o => o.ClientEntity)
                .WithMany(c => c.Orders)
                .HasForeignKey(o => o.ClientId);
 
-        builder.HasOne(o => o.Product)
+        builder.HasOne(o => o.ProductEntity)
                .WithMany(p => p.Orders)
                .HasForeignKey(o => o.ProductId);
     }

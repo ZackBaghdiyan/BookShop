@@ -4,9 +4,9 @@ using BookShop.Data.Entities;
 
 namespace BookShop.Api.Mapping;
 
-public class AppMappingProfile : Profile
+public class MappingProfile : Profile
 {
-    public AppMappingProfile()
+    public MappingProfile()
     {
         CreateMap<ClientPOSTModel, ClientEntity>();
         CreateMap<ClientEntity, ClientPOSTModel>();

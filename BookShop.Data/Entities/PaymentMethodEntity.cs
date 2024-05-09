@@ -9,6 +9,6 @@ public class PaymentMethodEntity : IIdentifiable
     public long ClientId { get; set; }
     public PaymentMethod PaymentMethod { get; set; }
     public string? Details { get; set; }
-    public ClientEntity? Client { get; set; }
+    public ClientEntity? ClientEntity { get; set; }
     public List<PaymentEntity>? Payments { get; set; }
 }

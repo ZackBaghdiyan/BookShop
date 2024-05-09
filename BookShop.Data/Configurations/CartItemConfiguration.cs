@@ -4,17 +4,17 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BookShop.Data.Configurations;
 
-public class CartItemConfiguration : IEntityTypeConfiguration<CartItem>
+public class CartItemConfiguration : IEntityTypeConfiguration<CartItemEntity>
 {
-    public void Configure(EntityTypeBuilder<CartItem> builder)
+    public void Configure(EntityTypeBuilder<CartItemEntity> builder)
     {
         builder.HasKey(ci => ci.Id);
 
-        builder.HasOne(ci => ci.Product)
-               .WithOne(p => p.CartItem)
-               .HasForeignKey<CartItem>(ci => ci.ProductId);
+        builder.HasOne(ci => ci.ProductEntity)
+               .WithOne(p => p.CartItemEntity)
+               .HasForeignKey<CartItemEntity>(ci => ci.ProductId);
 
-        builder.HasOne(ci => ci.Cart)
+        builder.HasOne(ci => ci.CartEntity)
                .WithMany(c => c.CartItems)
                .HasForeignKey(ci => ci.CartId);
     }
