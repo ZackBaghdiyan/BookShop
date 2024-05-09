@@ -5,19 +5,26 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using BookShop.Services.Abstractions;
+using BookShop.Services.Options;
+using Microsoft.AspNetCore.Http;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 internal class ClientService : IClientService
 {
     private readonly BookShopDbContext _bookShopDbContext;
-    private readonly ILogger<ClientService> _loggerService;
-    private readonly ICustomAuthenticationService _customAuthenticationService;
+    private readonly ILogger<ClientService> _logger;
+    private readonly IHttpContextAccessor _contextAccessor;
+    private readonly JwtOptions _jwtOptions;
 
-    public ClientService(BookShopDbContext bookShopDbContext, ILogger<ClientService> loggerService,
-                         ICustomAuthenticationService customAuthenticationService)
+    public ClientService(BookShopDbContext bookShopDbContext, ILogger<ClientService> logger,
+        IHttpContextAccessor contextAccessor, JwtOptions jwtOptions)
     {
         _bookShopDbContext = bookShopDbContext;
-        _loggerService = loggerService;
-        _customAuthenticationService = customAuthenticationService;
+        _logger = logger;
+        _contextAccessor = contextAccessor;
+        _jwtOptions = jwtOptions;
     }
 
     public async Task RegisterAsync(ClientEntity clientEntity)
@@ -28,11 +35,11 @@ internal class ClientService : IClientService
 
             _bookShopDbContext.Clients.Add(clientEntity);
             await _bookShopDbContext.SaveChangesAsync();
-            _loggerService.LogInformation($"Client with Id {clientEntity.Id} added successfully.");
+            _logger.LogInformation($"Client with Id {clientEntity.Id} added successfully.");
         }
         catch (Exception ex)
         {
-            _loggerService.LogError(ex, $"Error {ex.Message}");
+            _logger.LogError(ex, $"Error {ex.Message}");
             throw;
         }
     }
@@ -41,7 +48,7 @@ internal class ClientService : IClientService
     {
         try
         {
-            var clientId = GetClientIdFromToken(clientEntity);
+            var checkingClientEmail = GetClientEmailFromToken();
 
             var clientToUpdate = await _bookShopDbContext.Clients.FirstOrDefaultAsync(c => c.Id == clientEntity.Id);
 
@@ -50,7 +57,7 @@ internal class ClientService : IClientService
                 throw new InvalidOperationException("Client not found");
             }
 
-            if (clientToUpdate.Id != clientId)
+            if (clientToUpdate.Email != checkingClientEmail)
             {
                 throw new InvalidOperationException("Unauthorized: You can only update your own client information.");
             }
@@ -66,11 +73,11 @@ internal class ClientService : IClientService
             }
 
             await _bookShopDbContext.SaveChangesAsync();
-            _loggerService.Log(LogLevel.Information, $"Client with Id {clientEntity.Id} modified successfully.");
+            _logger.Log(LogLevel.Information, $"Client with Id {clientEntity.Id} modified successfully.");
         }
         catch (Exception ex)
         {
-            _loggerService.LogError($"Error: {ex.Message}");
+            _logger.LogError($"Error: {ex.Message}");
             throw;
         }
     }
@@ -86,33 +93,45 @@ internal class ClientService : IClientService
                 throw new Exception("There is no matching Client");
             }
 
-            var requestClientId = GetClientIdFromToken(clientToRemove);
+            var checkingClientEmail = GetClientEmailFromToken();
 
-            if (clientId != requestClientId)
+            if (clientToRemove.Email != checkingClientEmail)
             {
                 throw new InvalidOperationException("Unauthorized: You can only remove your own client.");
             }
 
             _bookShopDbContext.Clients.Remove(clientToRemove);
             await _bookShopDbContext.SaveChangesAsync();
-            _loggerService.Log(LogLevel.Information, $"Client with Id {clientToRemove.Id} removed successfully.");
+            _logger.Log(LogLevel.Information, $"Client with Id {clientToRemove.Id} removed successfully.");
         }
         catch (Exception ex)
         {
-            _loggerService.LogError($"Error: {ex.Message}");
+            _logger.LogError($"Error: {ex.Message}");
             throw;
         }
     }
 
-    private long GetClientIdFromToken(ClientEntity clientEntity)
+    private string GetClientEmailFromToken()
     {
-        var token = _customAuthenticationService.GenerateToken(clientEntity);
-
+        var token = _contextAccessor.HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
         if (token != null)
         {
-            var clientId = long.Parse(token.Claims.First(x => x.Type == "clientId").Value);
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_jwtOptions.SecretKey);
 
-            return clientId;
+            tokenHandler.ValidateToken(token, new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ClockSkew = TimeSpan.Zero
+            }, out SecurityToken validatedToken);
+
+            var jwtToken = (JwtSecurityToken)validatedToken;
+            var clientEmail = jwtToken.Claims.First(x => x.Type == ClaimTypes.Email).Value;
+
+            return clientEmail;
         }
         throw new InvalidOperationException("Token not found.");
     }
@@ -123,12 +142,33 @@ internal class ClientService : IClientService
         {
             byte[] hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
             StringBuilder builder = new StringBuilder();
+
             for (int i = 0; i < hashedBytes.Length; i++)
             {
                 builder.Append(hashedBytes[i].ToString("x2"));
             }
 
             return builder.ToString();
+        }
+    }
+
+    public async Task<ClientEntity> GetByIdAsync(long clientId)
+    {
+        try
+        {
+            var client = await _bookShopDbContext.Clients.FirstOrDefaultAsync(p => p.Id == clientId);
+
+            if (client == null)
+            {
+                throw new Exception("Client not found");
+            }
+
+            return client;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error: {ex.Message}");
+            throw;
         }
     }
 }
