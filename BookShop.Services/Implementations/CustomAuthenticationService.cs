@@ -2,6 +2,7 @@
 using BookShop.Data.Entities;
 using BookShop.Services.Abstractions;
 using BookShop.Services.Options;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -15,11 +16,13 @@ public class CustomAuthenticationService : ICustomAuthenticationService
 {
     private readonly JwtOptions _jwtOptions;
     private readonly BookShopDbContext _dbContext;
+    private readonly IHttpContextAccessor _contextAccessor;
 
-    public CustomAuthenticationService(JwtOptions jwtOptions, BookShopDbContext dbContext)
+    public CustomAuthenticationService(JwtOptions jwtOptions, BookShopDbContext dbContext, IHttpContextAccessor contextAccessor)
     {
         _jwtOptions = jwtOptions;
         _dbContext = dbContext;
+        _contextAccessor = contextAccessor;
     }
 
     public string GenerateToken(ClientEntity clientEntity)
@@ -36,7 +39,7 @@ public class CustomAuthenticationService : ICustomAuthenticationService
             issuer: _jwtOptions.Issuer,
             audience: _jwtOptions.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(10), 
+            expires: DateTime.UtcNow.AddMinutes(10),
             signingCredentials: credentials
         );
 
@@ -63,5 +66,30 @@ public class CustomAuthenticationService : ICustomAuthenticationService
 
             return string.Equals(hashedPassword, storedHash);
         }
+    }
+
+    public string GetClientEmailFromToken()
+    {
+        var token = _contextAccessor.HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+        if (token != null)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_jwtOptions.SecretKey);
+
+            tokenHandler.ValidateToken(token, new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ClockSkew = TimeSpan.Zero
+            }, out SecurityToken validatedToken);
+
+            var jwtToken = (JwtSecurityToken)validatedToken;
+            var clientEmail = jwtToken.Claims.First(x => x.Type == ClaimTypes.Email).Value;
+
+            return clientEmail;
+        }
+        throw new InvalidOperationException("Token not found.");
     }
 }

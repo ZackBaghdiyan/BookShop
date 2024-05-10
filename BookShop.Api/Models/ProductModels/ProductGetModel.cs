@@ -1,8 +1,8 @@
 ﻿using BookShop.Data.Abstractions;
 
-namespace BookShop.Data.Entities;
+namespace BookShop.Api.Models.ProductModels;
 
-public class ProductEntity : IIdentifiable
+public class ProductGetModel : IIdentifiable
 {
     public long Id { get; set; }
     public string Name { get; set; } = null!;
@@ -10,7 +10,4 @@ public class ProductEntity : IIdentifiable
     public string Manufacturer { get; set; } = null!;
     public string Details { get; set; } = null!;
     public int Count { get; set; }
-    public CartItemEntity? CartItemEntity { get; set; } 
-    public List<OrderEntity> Orders { get; set; } = new();
-    public WishListItemEntity? WishListItemEntity { get; set; }
 }
