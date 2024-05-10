@@ -15,6 +15,6 @@ public class PaymentMethodConfiguration : IEntityTypeConfiguration<PaymentMethod
                .HasForeignKey(pm => pm.ClientId);
 
         builder.Property(pm => pm.Details)
-            .IsRequired();
+               .IsRequired();
     }
 }

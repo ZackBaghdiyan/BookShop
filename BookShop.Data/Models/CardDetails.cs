@@ -1,6 +1,6 @@
 ﻿namespace BookShop.Data.Models;
 
-public class CardDetails 
+public class CardDetails
 {
     public long CardNumber { get; set; }
     public int CVV { get; set; }

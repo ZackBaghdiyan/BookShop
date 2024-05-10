@@ -5,26 +5,19 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using BookShop.Services.Abstractions;
-using BookShop.Services.Options;
-using Microsoft.AspNetCore.Http;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 
 internal class ClientService : IClientService
 {
     private readonly BookShopDbContext _bookShopDbContext;
     private readonly ILogger<ClientService> _logger;
-    private readonly IHttpContextAccessor _contextAccessor;
-    private readonly JwtOptions _jwtOptions;
+    private readonly ICustomAuthenticationService _customAuthenticationService;
 
     public ClientService(BookShopDbContext bookShopDbContext, ILogger<ClientService> logger,
-        IHttpContextAccessor contextAccessor, JwtOptions jwtOptions)
+        ICustomAuthenticationService customAuthenticationService)
     {
         _bookShopDbContext = bookShopDbContext;
         _logger = logger;
-        _contextAccessor = contextAccessor;
-        _jwtOptions = jwtOptions;
+        _customAuthenticationService = customAuthenticationService;
     }
 
     public async Task RegisterAsync(ClientEntity clientEntity)
@@ -48,7 +41,7 @@ internal class ClientService : IClientService
     {
         try
         {
-            var checkingClientEmail = GetClientEmailFromToken();
+            var checkingClientEmail = _customAuthenticationService.GetClientEmailFromToken();
 
             var clientToUpdate = await _bookShopDbContext.Clients.FirstOrDefaultAsync(c => c.Id == clientEntity.Id);
 
@@ -59,7 +52,7 @@ internal class ClientService : IClientService
 
             if (clientToUpdate.Email != checkingClientEmail)
             {
-                throw new InvalidOperationException("Unauthorized: You can only update your own client information.");
+                throw new InvalidOperationException("Unauthorized: You can only update your own client information");
             }
 
             clientToUpdate.FirstName = clientEntity.FirstName;
@@ -73,7 +66,7 @@ internal class ClientService : IClientService
             }
 
             await _bookShopDbContext.SaveChangesAsync();
-            _logger.Log(LogLevel.Information, $"Client with Id {clientEntity.Id} modified successfully.");
+            _logger.LogInformation($"Client with Id {clientEntity.Id} modified successfully.");
         }
         catch (Exception ex)
         {
@@ -93,7 +86,7 @@ internal class ClientService : IClientService
                 throw new Exception("There is no matching Client");
             }
 
-            var checkingClientEmail = GetClientEmailFromToken();
+            var checkingClientEmail = _customAuthenticationService.GetClientEmailFromToken();
 
             if (clientToRemove.Email != checkingClientEmail)
             {
@@ -102,38 +95,13 @@ internal class ClientService : IClientService
 
             _bookShopDbContext.Clients.Remove(clientToRemove);
             await _bookShopDbContext.SaveChangesAsync();
-            _logger.Log(LogLevel.Information, $"Client with Id {clientToRemove.Id} removed successfully.");
+            _logger.LogInformation($"Client with Id {clientToRemove.Id} removed successfully.");
         }
         catch (Exception ex)
         {
             _logger.LogError($"Error: {ex.Message}");
             throw;
         }
-    }
-
-    private string GetClientEmailFromToken()
-    {
-        var token = _contextAccessor.HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-        if (token != null)
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_jwtOptions.SecretKey);
-
-            tokenHandler.ValidateToken(token, new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(key),
-                ValidateIssuer = false,
-                ValidateAudience = false,
-                ClockSkew = TimeSpan.Zero
-            }, out SecurityToken validatedToken);
-
-            var jwtToken = (JwtSecurityToken)validatedToken;
-            var clientEmail = jwtToken.Claims.First(x => x.Type == ClaimTypes.Email).Value;
-
-            return clientEmail;
-        }
-        throw new InvalidOperationException("Token not found.");
     }
 
     private string HashPassword(string password)

@@ -1,7 +1,10 @@
-﻿namespace BookShop.Api.Models.ProductModels;
+﻿using BookShop.Data.Abstractions;
 
-public class ProductPostModel
+namespace BookShop.Api.Models.ProductModels;
+
+public class ProductGetModel : IIdentifiable
 {
+    public long Id { get; set; }
     public string Name { get; set; } = null!;
     public decimal Price { get; set; }
     public string Manufacturer { get; set; } = null!;

@@ -26,7 +26,8 @@ public class ProductController : ControllerBase
     {
         var productToAdd = _mapper.Map<ProductEntity>(productInput);
         await _productService.AddAsync(productToAdd);
-        return Ok(productToAdd);
+
+        return Ok();
     }
 
     [Authorize]
@@ -34,37 +35,50 @@ public class ProductController : ControllerBase
     public async Task<ActionResult<ProductEntity>> UpdateProduct(ProductPutModel productInput)
     {
         var productToUpdate = _mapper.Map<ProductEntity>(productInput);
-        productToUpdate = await _productService.UpdateAsync(productToUpdate); 
-        return Ok(productToUpdate);
+        await _productService.UpdateAsync(productToUpdate);
+
+        return Ok();
     }
 
     [Authorize]
     [HttpDelete("{id}")]
-    public async Task<ActionResult> RemoveProduct(long productId)
+    public async Task<ActionResult<ProductEntity>> RemoveProduct(long id)
     {
-        await _productService.RemoveAsync(productId);
+        await _productService.RemoveAsync(id);
+
         return Ok();
     }
 
     [Authorize]
     [HttpDelete]
-    public async Task<ActionResult> ClearProducts()
+    public async Task<ActionResult<ProductEntity>> ClearProducts()
     {
         await _productService.ClearAsync();
+
         return Ok();
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<ProductEntity>> GetProduct(long productId)
+    public async Task<ActionResult<ProductGetModel>> GetProduct(long id)
     {
-        var product = await _productService.GetByIdAsync(productId);
-        return Ok(product);
+        var product = await _productService.GetByIdAsync(id);
+        var productOutput = _mapper.Map<ProductGetModel>(product);
+
+        return Ok(productOutput);
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<ProductEntity>>> GetAllProducts()
+    public async Task<ActionResult<List<ProductGetModel>>> GetAllProducts()
     {
         var products = await _productService.GetAllAsync();
-        return Ok(products);
+        var productsOutput = new List<ProductGetModel>();
+
+        foreach (var product in products)
+        {
+            var productOutput = _mapper.Map<ProductGetModel>(product);
+            productsOutput.Add(productOutput);
+        }
+
+        return Ok(productsOutput);
     }
 }
