@@ -2,6 +2,7 @@
 using BookShop.Api.Models.CartItemModels;
 using BookShop.Api.Models.CartModels;
 using BookShop.Api.Models.ClientModels;
+using BookShop.Api.Models.PaymentMethodModels;
 using BookShop.Api.Models.ProductModels;
 using BookShop.Api.Models.WishListItemModels;
 using BookShop.Api.Models.WishListModels;
@@ -16,6 +17,7 @@ public class MappingProfile : Profile
         CreateMap<ClientPostModel, ClientEntity>();
         CreateMap<ClientPutModel, ClientEntity>();
         CreateMap<ClientLoginModel, ClientEntity>();
+        CreateMap<ClientDeleteModel, ClientEntity>();
 
         CreateMap<ProductPutModel, ProductEntity>();
         CreateMap<ProductPostModel, ProductEntity>();
@@ -33,5 +35,9 @@ public class MappingProfile : Profile
         CreateMap<WishListItemEntity, WishListItemGetModel>();
         CreateMap<WishListItemDeleteModel, WishListItemEntity>();
         CreateMap<WishListItemPostModel, WishListItemEntity>();
+
+        CreateMap<PaymentMethodEntity, PaymentMethodGetModel>();
+        CreateMap<PaymentMethodPostModel, PaymentMethodEntity>();
+        CreateMap<PaymentMethodDeleteModel, PaymentMethodEntity>();
     }
 }

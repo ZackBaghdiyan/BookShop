@@ -11,12 +11,12 @@ namespace BookShop.Api.Controllers;
 [Route("[controller]")]
 public class ProductController : ControllerBase
 {
-    private readonly IProductService _productService;
+    private readonly IProductService _service;
     private readonly IMapper _mapper;
 
-    public ProductController(IProductService productService, IMapper mapper)
+    public ProductController(IProductService service, IMapper mapper)
     {
-        _productService = productService;
+        _service = service;
         _mapper = mapper;
     }
 
@@ -25,7 +25,7 @@ public class ProductController : ControllerBase
     public async Task<ActionResult<ProductEntity>> AddProduct(ProductPostModel productInput)
     {
         var productToAdd = _mapper.Map<ProductEntity>(productInput);
-        await _productService.AddAsync(productToAdd);
+        await _service.AddAsync(productToAdd);
 
         return Ok();
     }
@@ -35,7 +35,7 @@ public class ProductController : ControllerBase
     public async Task<ActionResult<ProductEntity>> UpdateProduct(ProductPutModel productInput)
     {
         var productToUpdate = _mapper.Map<ProductEntity>(productInput);
-        await _productService.UpdateAsync(productToUpdate);
+        await _service.UpdateAsync(productToUpdate);
 
         return Ok();
     }
@@ -44,7 +44,7 @@ public class ProductController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<ActionResult<ProductEntity>> RemoveProduct(long id)
     {
-        await _productService.RemoveAsync(id);
+        await _service.RemoveAsync(id);
 
         return Ok();
     }
@@ -53,7 +53,7 @@ public class ProductController : ControllerBase
     [HttpDelete]
     public async Task<ActionResult<ProductEntity>> ClearProducts()
     {
-        await _productService.ClearAsync();
+        await _service.ClearAsync();
 
         return Ok();
     }
@@ -61,7 +61,7 @@ public class ProductController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<ProductGetModel>> GetProduct(long id)
     {
-        var product = await _productService.GetByIdAsync(id);
+        var product = await _service.GetByIdAsync(id);
         var productOutput = _mapper.Map<ProductGetModel>(product);
 
         return Ok(productOutput);
@@ -70,7 +70,7 @@ public class ProductController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<ProductGetModel>>> GetAllProducts()
     {
-        var products = await _productService.GetAllAsync();
+        var products = await _service.GetAllAsync();
         var productsOutput = new List<ProductGetModel>();
 
         foreach (var product in products)
