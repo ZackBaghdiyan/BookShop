@@ -19,16 +19,11 @@ internal class CartService : ICartService
         _customAuthenticationService = customAuthenticationService;
     }
 
-    public async Task AddItemAsync(CartItemEntity cartItem)
+    public async Task ClearAllItemsAsync(long cartId)
     {
         try
         {
-            if (cartItem == null)
-            {
-                throw new Exception("There is nothing to add");
-            }
-
-            var cart = await _dbContext.Carts.FirstOrDefaultAsync(c => c.Id == cartItem.CartId);
+            var cart = await _dbContext.Carts.FirstOrDefaultAsync(c => c.Id == cartId);
 
             if (cart == null)
             {
@@ -39,24 +34,25 @@ internal class CartService : ICartService
 
             if (client == null)
             {
-                throw new Exception("Client not Found");
+                throw new Exception("Client not found");
             }
 
             var checkingClientEmail = _customAuthenticationService.GetClientEmailFromToken();
 
             if (client.Email != checkingClientEmail)
             {
-                throw new Exception("Unauthorized: You can only add Items in your own Cart");
+                throw new Exception("Unauthorized: You can't clear Items from Cart of other Client");
             }
 
             if (cart.CartItems == null)
             {
-                cart.CartItems = new List<CartItemEntity>();
+                throw new Exception("Cart is already empty");
             }
 
-            cart.CartItems.Add(cartItem);
+            _dbContext.CartItems.RemoveRange(cart.CartItems);
+            cart.CartItems.Clear();
             await _dbContext.SaveChangesAsync();
-            _logger.LogInformation($"CartItem with Id {cartItem.Id} added to Cart with Id {cart.Id} successfully");
+            _logger.LogInformation($"All CartItems cleared from Cart with Id {cartId} successfully");
         }
         catch (Exception ex)
         {
@@ -103,52 +99,6 @@ internal class CartService : ICartService
         }
     }
 
-    public async Task RemoveItemAsync(CartItemEntity cartItem)
-    {
-        try
-        {
-            if (cartItem == null)
-            {
-                throw new Exception("There is nothing to add");
-            }
-
-            var cart = await _dbContext.Carts.FirstOrDefaultAsync(c => c.Id == cartItem.CartId);
-
-            if (cart == null)
-            {
-                throw new Exception("Cart not found");
-            }
-
-            var client = await _dbContext.Clients.FirstOrDefaultAsync(c => c.Id == cart.ClientId);
-
-            if (client == null)
-            {
-                throw new Exception("Client not found");
-            }
-
-            var checkingClientEmail = _customAuthenticationService.GetClientEmailFromToken();
-
-            if (client.Email != checkingClientEmail)
-            {
-                throw new Exception("Unauthorized: You can only remove Items only from your own Cart");
-            }
-
-            if (cart.CartItems == null)
-            {
-                throw new Exception("Cart is already empty");
-            }
-
-            cart.CartItems.Remove(cartItem);
-            await _dbContext.SaveChangesAsync();
-            _logger.LogInformation($"CartItem with Id {cartItem.Id} removed from Cart with Id {cart.Id} successfully");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"Error: {ex.Message}");
-            throw;
-        }
-    }
-
     public async Task<List<CartItemEntity>> GetAllItemsAsync(long cartId)
     {
         try
@@ -174,7 +124,15 @@ internal class CartService : ICartService
                 throw new Exception("Unauthorized: You can only get Items of your own cart");
             }
 
-            return cart.CartItems;
+            var listToReturn = new List<CartItemEntity>();
+            var listItemsFromDb = await _dbContext.CartItems.Where(ci => ci.CartId == cartId).ToListAsync();
+            
+            foreach( var item in listItemsFromDb)
+            {
+                listToReturn.Add(item);
+            }
+
+            return listToReturn;
         }
         catch (Exception ex)
         {

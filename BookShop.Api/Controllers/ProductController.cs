@@ -31,13 +31,12 @@ public class ProductController : ControllerBase
 
     [Authorize]
     [HttpPut]
-    public async Task<ActionResult<ProductGetModel>> UpdateProduct(ProductPutModel productInput)
+    public async Task<ActionResult<ProductEntity>> UpdateProduct(ProductPutModel productInput)
     {
         var productToUpdate = _mapper.Map<ProductEntity>(productInput);
-        productToUpdate = await _productService.UpdateAsync(productToUpdate);
-        var productOutput = _mapper.Map<ProductGetModel>(productToUpdate);
+        await _productService.UpdateAsync(productToUpdate);
 
-        return Ok(productOutput);
+        return Ok();
     }
 
     [Authorize]

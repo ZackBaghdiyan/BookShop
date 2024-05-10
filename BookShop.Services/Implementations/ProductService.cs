@@ -9,12 +9,12 @@ namespace BookShop.Services.Implementations;
 
 internal class ProductService : IProductService
 {
-    private readonly BookShopDbContext _bookShopDbContext;
-    private readonly ILogger<ProductService> _logger;   
+    private readonly BookShopDbContext _dbContext;
+    private readonly ILogger<ProductService> _logger;
 
     public ProductService(BookShopDbContext bookShopDbContext, ILogger<ProductService> logger)
     {
-        _bookShopDbContext = bookShopDbContext;
+        _dbContext = bookShopDbContext;
         _logger = logger;
     }
 
@@ -24,8 +24,8 @@ internal class ProductService : IProductService
         {
             productEntity.Details = SerializeDetails(productEntity.Details);
 
-            _bookShopDbContext.Products.Add(productEntity);
-            await _bookShopDbContext.SaveChangesAsync();
+            _dbContext.Products.Add(productEntity);
+            await _dbContext.SaveChangesAsync();
             _logger.LogInformation($"Product with Id {productEntity.Id} added successfully");
         }
         catch (Exception ex)
@@ -39,9 +39,9 @@ internal class ProductService : IProductService
     {
         try
         {
-            var products = await _bookShopDbContext.Products.ToListAsync();
-            _bookShopDbContext.Products.RemoveRange(products);
-            await _bookShopDbContext.SaveChangesAsync();
+            var products = await _dbContext.Products.ToListAsync();
+            _dbContext.Products.RemoveRange(products);
+            await _dbContext.SaveChangesAsync();
             _logger.LogInformation("All products cleared successfully");
         }
         catch (Exception ex)
@@ -55,7 +55,7 @@ internal class ProductService : IProductService
     {
         try
         {
-            return _bookShopDbContext.Products.ToListAsync();
+            return _dbContext.Products.ToListAsync();
         }
         catch (Exception ex)
         {
@@ -68,9 +68,9 @@ internal class ProductService : IProductService
     {
         try
         {
-            var product = await _bookShopDbContext.Products.FirstOrDefaultAsync(p => p.Id == productId);
+            var product = await _dbContext.Products.FirstOrDefaultAsync(p => p.Id == productId);
 
-            if(product == null)
+            if (product == null)
             {
                 throw new Exception("Product not found");
             }
@@ -88,15 +88,15 @@ internal class ProductService : IProductService
     {
         try
         {
-            var product = await _bookShopDbContext.Products.FirstOrDefaultAsync(p => p.Id == productId); 
+            var product = await _dbContext.Products.FirstOrDefaultAsync(p => p.Id == productId);
 
-            if(product == null)
+            if (product == null)
             {
                 throw new Exception("Product not found");
             }
 
-            _bookShopDbContext.Products.Remove(product);
-            await _bookShopDbContext.SaveChangesAsync();
+            _dbContext.Products.Remove(product);
+            await _dbContext.SaveChangesAsync();
             _logger.LogInformation($"Product with Id {productId} removed successfully");
         }
         catch (Exception ex)
@@ -106,7 +106,7 @@ internal class ProductService : IProductService
         }
     }
 
-    public async Task<ProductEntity> UpdateAsync(ProductEntity productEntity)
+    public async Task UpdateAsync(ProductEntity productEntity)
     {
         try
         {
@@ -120,12 +120,10 @@ internal class ProductService : IProductService
             productToUpdate.Manufacturer = productEntity.Manufacturer;
             productToUpdate.Details = productEntity.Details;
 
-            await _bookShopDbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync();
             _logger.LogInformation($"Product with Id {productEntity.Id} updated successfully");
-
-            return productToUpdate;
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             _logger.LogError(ex, $"Error: {ex.Message}");
             throw;
