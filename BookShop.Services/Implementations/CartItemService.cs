@@ -47,7 +47,7 @@ internal class CartItemService : ICartItemService
 
             if (client.Email != checkingClientEmail)
             {
-                throw new Exception("Unauthorized: You can only add Items in your own Cart");
+                throw new Exception("Unauthorized: You can add Items only in your own Cart");
             }
 
             if (cart.CartItems == null)
@@ -94,7 +94,7 @@ internal class CartItemService : ICartItemService
 
             if (client.Email != checkingClientEmail)
             {
-                throw new Exception("Unauthorized: You can only remove Items only from your own Cart");
+                throw new Exception("Unauthorized: You can remove Items only from your own Cart");
             }
 
             if (cart.CartItems == null)
@@ -140,7 +140,7 @@ internal class CartItemService : ICartItemService
 
             if (client.Email != checkingClientEmail)
             {
-                throw new Exception("Unauthorized: You can only remove Items only from your own Cart");
+                throw new Exception("Unauthorized: You can update Items only from your own Cart");
             }
 
             var cartItemToUpdate = await _dbContext.CartItems.FirstOrDefaultAsync(c => c.Id == cartItem.Id);

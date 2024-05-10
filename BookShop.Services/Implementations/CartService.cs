@@ -50,7 +50,6 @@ internal class CartService : ICartService
             }
 
             _dbContext.CartItems.RemoveRange(cart.CartItems);
-            cart.CartItems.Clear();
             await _dbContext.SaveChangesAsync();
             _logger.LogInformation($"All CartItems cleared from Cart with Id {cartId} successfully");
         }
@@ -121,16 +120,13 @@ internal class CartService : ICartService
 
             if (client.Email != checkingClientEmail)
             {
-                throw new Exception("Unauthorized: You can only get Items of your own cart");
+                throw new Exception("Unauthorized: You can get Items only of your own cart");
             }
 
             var listToReturn = new List<CartItemEntity>();
             var listItemsFromDb = await _dbContext.CartItems.Where(ci => ci.CartId == cartId).ToListAsync();
 
-            foreach (var item in listItemsFromDb)
-            {
-                listToReturn.Add(item);
-            }
+            listToReturn.AddRange(listItemsFromDb);
 
             return listToReturn;
         }
