@@ -1,6 +1,6 @@
 ﻿namespace BookShop.Api.Models.ProductModels;
 
-public class ProductPOSTModel
+public class ProductPostModel
 {
     public string Name { get; set; } = null!;
     public decimal Price { get; set; } 

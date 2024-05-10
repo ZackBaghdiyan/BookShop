@@ -2,7 +2,7 @@
 
 namespace BookShop.Api.Models.ProductModels;
 
-public class ProductPUTModel : IIdentifiable
+public class ProductPutModel : IIdentifiable
 {
     public long Id {  get; set; }
     public string Name { get; set; } = null!;

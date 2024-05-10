@@ -1,20 +1,30 @@
 ﻿using BookShop.Data.Entities;
 using BookShop.Data;
-using BookShop.Services.Abstractions;
 using Microsoft.Extensions.Logging;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
-using System.Text;
+using BookShop.Services.Abstractions;
+using BookShop.Services.Options;
+using Microsoft.AspNetCore.Http;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 internal class ClientService : IClientService
 {
     private readonly BookShopDbContext _bookShopDbContext;
-    private readonly ILogger<ClientService> _loggerService;
+    private readonly ILogger<ClientService> _logger;
+    private readonly IHttpContextAccessor _contextAccessor;
+    private readonly JwtOptions _jwtOptions;
 
-    public ClientService(BookShopDbContext bookShopDbContext, ILogger<ClientService> loggerService)
+    public ClientService(BookShopDbContext bookShopDbContext, ILogger<ClientService> logger,
+        IHttpContextAccessor contextAccessor, JwtOptions jwtOptions)
     {
         _bookShopDbContext = bookShopDbContext;
-        _loggerService = loggerService;
+        _logger = logger;
+        _contextAccessor = contextAccessor;
+        _jwtOptions = jwtOptions;
     }
 
     public async Task RegisterAsync(ClientEntity clientEntity)
@@ -25,30 +35,31 @@ internal class ClientService : IClientService
 
             _bookShopDbContext.Clients.Add(clientEntity);
             await _bookShopDbContext.SaveChangesAsync();
-            _loggerService.LogInformation($"Client with Id {clientEntity.Id} added successfully.");
-
+            _logger.LogInformation($"Client with Id {clientEntity.Id} added successfully.");
         }
         catch (Exception ex)
         {
-            _loggerService.LogError(ex, $"Error occurred while adding client.");
+            _logger.LogError(ex, $"Error {ex.Message}");
+            throw;
         }
     }
 
-    /// <summary>
-    /// Changing existing client with your input student
-    /// </summary>
-    /// <param name="clientEntity"></param>
-    /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
     public async Task UpdateAsync(ClientEntity clientEntity)
     {
         try
         {
-            var clientToUpdate = await _bookShopDbContext.Clients.FirstOrDefaultAsync(c => c.Email == clientEntity.Email);
+            var checkingClientEmail = GetClientEmailFromToken();
+
+            var clientToUpdate = await _bookShopDbContext.Clients.FirstOrDefaultAsync(c => c.Id == clientEntity.Id);
 
             if (clientToUpdate is null)
             {
                 throw new InvalidOperationException("Client not found");
+            }
+
+            if (clientToUpdate.Email != checkingClientEmail)
+            {
+                throw new InvalidOperationException("Unauthorized: You can only update your own client information.");
             }
 
             clientToUpdate.FirstName = clientEntity.FirstName;
@@ -56,48 +67,73 @@ internal class ClientService : IClientService
             clientToUpdate.Email = clientEntity.Email;
             clientToUpdate.Address = clientEntity.Address;
 
-            if(!string.IsNullOrEmpty(clientEntity.Password))
+            if (!string.IsNullOrEmpty(clientEntity.Password))
             {
                 clientToUpdate.Password = HashPassword(clientEntity.Password);
             }
 
             await _bookShopDbContext.SaveChangesAsync();
-            _loggerService.Log(LogLevel.Information, $"Client with Id {clientEntity.Id} modified successfully.");
+            _logger.Log(LogLevel.Information, $"Client with Id {clientEntity.Id} modified successfully.");
         }
         catch (Exception ex)
         {
-            _loggerService.Log(LogLevel.Error, $"Error: {ex.Message}");
+            _logger.LogError($"Error: {ex.Message}");
             throw;
         }
     }
 
-    public async Task RemoveAsync(ClientEntity clientEntity)
+    public async Task RemoveAsync(long clientId)
     {
         try
         {
-            var clientToRemove = await _bookShopDbContext.Clients.FirstOrDefaultAsync(c => c.Email == clientEntity.Email);
+            var clientToRemove = await _bookShopDbContext.Clients.FirstOrDefaultAsync(c => c.Id == clientId);
 
             if (clientToRemove is null)
             {
                 throw new Exception("There is no matching Client");
             }
 
-            clientEntity.Password = HashPassword(clientEntity.Password);
+            var checkingClientEmail = GetClientEmailFromToken();
 
-            if(clientEntity.Password != clientToRemove.Password)
+            if (clientToRemove.Email != checkingClientEmail)
             {
-                throw new Exception("Invalid password");
+                throw new InvalidOperationException("Unauthorized: You can only remove your own client.");
             }
 
             _bookShopDbContext.Clients.Remove(clientToRemove);
             await _bookShopDbContext.SaveChangesAsync();
-            _loggerService.Log(LogLevel.Information, $"Client with Id {clientToRemove.Id} removed successfully.");
+            _logger.Log(LogLevel.Information, $"Client with Id {clientToRemove.Id} removed successfully.");
         }
         catch (Exception ex)
         {
-            _loggerService.Log(LogLevel.Error, $"Error: {ex.Message}");
+            _logger.LogError($"Error: {ex.Message}");
             throw;
         }
+    }
+
+    private string GetClientEmailFromToken()
+    {
+        var token = _contextAccessor.HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+        if (token != null)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_jwtOptions.SecretKey);
+
+            tokenHandler.ValidateToken(token, new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ClockSkew = TimeSpan.Zero
+            }, out SecurityToken validatedToken);
+
+            var jwtToken = (JwtSecurityToken)validatedToken;
+            var clientEmail = jwtToken.Claims.First(x => x.Type == ClaimTypes.Email).Value;
+
+            return clientEmail;
+        }
+        throw new InvalidOperationException("Token not found.");
     }
 
     private string HashPassword(string password)
@@ -106,11 +142,33 @@ internal class ClientService : IClientService
         {
             byte[] hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
             StringBuilder builder = new StringBuilder();
+
             for (int i = 0; i < hashedBytes.Length; i++)
             {
                 builder.Append(hashedBytes[i].ToString("x2"));
             }
+
             return builder.ToString();
+        }
+    }
+
+    public async Task<ClientEntity> GetByIdAsync(long clientId)
+    {
+        try
+        {
+            var client = await _bookShopDbContext.Clients.FirstOrDefaultAsync(p => p.Id == clientId);
+
+            if (client == null)
+            {
+                throw new Exception("Client not found");
+            }
+
+            return client;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error: {ex.Message}");
+            throw;
         }
     }
 }

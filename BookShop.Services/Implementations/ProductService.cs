@@ -122,6 +122,7 @@ internal class ProductService : IProductService
 
             await _bookShopDbContext.SaveChangesAsync();
             _logger.LogInformation($"Product with Id {productEntity.Id} updated successfully");
+
             return productToUpdate;
         }
         catch(Exception ex)

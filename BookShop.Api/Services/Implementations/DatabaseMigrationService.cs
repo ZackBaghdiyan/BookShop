@@ -1,7 +1,7 @@
 ﻿using BookShop.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace BookShop.Api.Services;
+namespace BookShop.Api.Services.Implementations;
 
 public class DatabaseMigrationService : IHostedService
 {

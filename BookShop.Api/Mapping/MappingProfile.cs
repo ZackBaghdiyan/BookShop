@@ -9,18 +9,10 @@ public class MappingProfile : Profile
 {
     public MappingProfile()
     {
-        CreateMap<ClientPOSTModel, ClientEntity>();
-        CreateMap<ClientEntity, ClientPOSTModel>();
-        CreateMap<ClientPUTModel, ClientEntity>();
-        CreateMap<ClientEntity, ClientPUTModel>();
-        CreateMap<ClientDELETEModel, ClientEntity>();
-        CreateMap<ClientEntity, ClientDELETEModel>();
+        CreateMap<ClientPostModel, ClientEntity>();
+        CreateMap<ClientPutModel, ClientEntity>();
 
-        CreateMap<ProductPOSTModel, ProductEntity>();
-        CreateMap<ProductEntity, ProductPOSTModel>();
-        CreateMap<ProductPUTModel, ProductEntity>();
-        CreateMap<ProductEntity, ProductPUTModel>();
-        CreateMap<ProductDELETEModel, ProductEntity>();
-        CreateMap<ProductEntity, ProductDELETEModel>();
+        CreateMap<ProductPutModel, ProductEntity>();
+        CreateMap<ProductPostModel, ProductEntity>();
     }
 }

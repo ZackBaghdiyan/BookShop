@@ -1,7 +1,10 @@
-﻿namespace BookShop.Api.Models.ClientModels;
+﻿using BookShop.Data.Abstractions;
 
-public class ClientPUTModel
+namespace BookShop.Api.Models.ClientModels;
+
+public class ClientPutModel : IIdentifiable
 {
+    public long Id { get; set; }
     public string FirstName { get; set; } = null!;
     public string LastName { get; set; } = null!;
     public string Address { get; set; } = null!;
