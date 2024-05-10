@@ -126,8 +126,8 @@ internal class CartService : ICartService
 
             var listToReturn = new List<CartItemEntity>();
             var listItemsFromDb = await _dbContext.CartItems.Where(ci => ci.CartId == cartId).ToListAsync();
-            
-            foreach( var item in listItemsFromDb)
+
+            foreach (var item in listItemsFromDb)
             {
                 listToReturn.Add(item);
             }

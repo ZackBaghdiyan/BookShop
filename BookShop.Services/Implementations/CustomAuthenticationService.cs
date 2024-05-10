@@ -45,7 +45,8 @@ public class CustomAuthenticationService : ICustomAuthenticationService
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
-    public async Task<ClientEntity> AuthenticateAsync(string email, string password)
+
+    public async Task<ClientEntity?> AuthenticateAsync(string email, string password)
     {
         var client = await _dbContext.Clients.FirstOrDefaultAsync(c => c.Email == email);
 
@@ -71,6 +72,7 @@ public class CustomAuthenticationService : ICustomAuthenticationService
     public string GetClientEmailFromToken()
     {
         var token = _contextAccessor.HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+
         if (token != null)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -90,6 +92,7 @@ public class CustomAuthenticationService : ICustomAuthenticationService
 
             return clientEmail;
         }
+
         throw new InvalidOperationException("Token not found.");
     }
 }
