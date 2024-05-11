@@ -75,11 +75,11 @@ internal class ClientService : IClientService
         }
     }
 
-    public async Task RemoveAsync(long clientId)
+    public async Task RemoveAsync(ClientEntity clientEntity)
     {
         try
         {
-            var clientToRemove = await _bookShopDbContext.Clients.FirstOrDefaultAsync(c => c.Id == clientId);
+            var clientToRemove = await _bookShopDbContext.Clients.FirstOrDefaultAsync(c => c.Id == clientEntity.Id);
 
             if (clientToRemove is null)
             {

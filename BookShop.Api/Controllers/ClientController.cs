@@ -11,20 +11,21 @@ namespace BookShop.Api.Controllers;
 [Route("[controller]")]
 public class ClientController : ControllerBase
 {
-    private readonly IClientService _clientService;
+    private readonly IClientService _service;
     private readonly IMapper _mapper;
 
-    public ClientController(IClientService clientService, IMapper mapper)
+    public ClientController(IClientService service, IMapper mapper)
     {
-        _clientService = clientService;
+        _service = service;
         _mapper = mapper;
     }
 
     [Authorize]
     [HttpDelete]
-    public async Task<ActionResult<ClientEntity>> RemoveClient(long clientId)
+    public async Task<ActionResult<ClientEntity>> RemoveClient(ClientDeleteModel clientInput)
     {
-        await _clientService.RemoveAsync(clientId);
+        var clientToRemove = _mapper.Map<ClientEntity>(clientInput);
+        await _service.RemoveAsync(clientToRemove);
 
         return Ok();
     }
@@ -34,7 +35,7 @@ public class ClientController : ControllerBase
     public async Task<ActionResult<ClientEntity>> UpdateClient(ClientPutModel clientInput)
     {
         var client = _mapper.Map<ClientEntity>(clientInput);
-        await _clientService.UpdateAsync(client);
+        await _service.UpdateAsync(client);
 
         return Ok();
     }
@@ -43,7 +44,7 @@ public class ClientController : ControllerBase
     public async Task<ActionResult<ClientEntity>> RegisterClient(ClientPostModel clientInput)
     {
         var client = _mapper.Map<ClientEntity>(clientInput);
-        await _clientService.RegisterAsync(client);
+        await _service.RegisterAsync(client);
 
         return Ok();
     }

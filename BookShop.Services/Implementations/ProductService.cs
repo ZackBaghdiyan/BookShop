@@ -51,11 +51,11 @@ internal class ProductService : IProductService
         }
     }
 
-    public Task<List<ProductEntity>> GetAllAsync()
+    public async Task<List<ProductEntity>> GetAllAsync()
     {
         try
         {
-            return _dbContext.Products.ToListAsync();
+            return await _dbContext.Products.ToListAsync();
         }
         catch (Exception ex)
         {
