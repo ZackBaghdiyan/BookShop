@@ -1,9 +1,9 @@
-﻿using BookShop.Data.Entities;
+﻿using BookShop.Services.Models.WishListItemModels;
 
 namespace BookShop.Services.Abstractions;
 
 public interface IWishListItemService
 {
-    Task AddAsync(WishListItemEntity wishListItem);
-    Task RemoveAsync(WishListItemEntity wishListItem);
+    Task<WishListItemGetVm> AddAsync(WishListItemAddVm wishListItem);
+    Task RemoveAsync(long wishListItemId);
 }

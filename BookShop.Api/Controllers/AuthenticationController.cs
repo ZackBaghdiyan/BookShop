@@ -1,11 +1,12 @@
-﻿using BookShop.Api.Models.ClientModels;
+﻿using BookShop.Services.Models.ClientModels;
+using BookShop.Services.Models.TokenModels;
 using BookShop.Services.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BookShop.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("[controller]")]
 public class AuthenticationController : ControllerBase
 {
     private readonly ICustomAuthenticationService _authenticationService;
@@ -17,18 +18,21 @@ public class AuthenticationController : ControllerBase
 
     [HttpPost]
     [Route("login")]
-    public async Task<ActionResult> Login(ClientLoginModel model)
+    public async Task<ActionResult<TokenLoginVm>> Login(ClientLoginVm clientLoginVm)
     {
-        var clientEntity = await _authenticationService.AuthenticateAsync(model.Email, model.Password);
+        var clientEntity = await _authenticationService.AuthenticateAsync(clientLoginVm.Email, clientLoginVm.Password);
+        var tokenLoginVm = new TokenLoginVm();
+
         if (clientEntity != null)
         {
-            var token = _authenticationService.GenerateToken(clientEntity);
+            var token = _authenticationService.GenerateToken(clientLoginVm.Email);
+            tokenLoginVm.Token = token;
 
-            return Ok(new { token });
+            return Ok(tokenLoginVm);
         }
-        else
-        {
-            return Unauthorized(new { message = "Invalid email or password" });
-        }
+
+        tokenLoginVm.Token = "Invalid email or password";
+
+        return Unauthorized(tokenLoginVm);
     }
 }

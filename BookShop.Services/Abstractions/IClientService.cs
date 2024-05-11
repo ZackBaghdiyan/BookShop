@@ -1,11 +1,12 @@
 ﻿using BookShop.Data.Entities;
+using BookShop.Services.Models.ClientModels;
 
 namespace BookShop.Services.Abstractions;
 
 public interface IClientService
 {
-    Task RegisterAsync(ClientEntity entity);
-    Task RemoveAsync(ClientEntity entity);
-    Task UpdateAsync(ClientEntity entity);
-    Task<ClientEntity> GetByIdAsync(long entityId);
+    Task<(ClientGetVm, CartEntity, WishListEntity)> RegisterAsync(ClientRegisterVm entity);
+    Task RemoveAsync(long clientId);
+    Task<ClientGetVm> UpdateAsync(ClientUpdateVm entity);
+    Task<ClientGetVm> GetByIdAsync(long entityId);
 }

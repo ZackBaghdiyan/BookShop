@@ -1,51 +1,55 @@
-﻿using AutoMapper;
-using BookShop.Api.Models.ClientModels;
+﻿using BookShop.Services.Models.ClientModels;
 using BookShop.Data.Entities;
 using BookShop.Services.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
 namespace BookShop.Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("[controller]")]
 public class ClientController : ControllerBase
 {
-    private readonly IClientService _service;
-    private readonly IMapper _mapper;
+    private readonly IClientService _clientService;
 
-    public ClientController(IClientService service, IMapper mapper)
+    public ClientController(IClientService clientService)
     {
-        _service = service;
-        _mapper = mapper;
+        _clientService = clientService;
     }
 
-    [Authorize]
     [HttpDelete]
-    public async Task<ActionResult<ClientEntity>> RemoveClient(ClientDeleteModel clientInput)
+    public async Task<ActionResult<ClientEntity>> RemoveClient(long clientId)
     {
-        var clientToRemove = _mapper.Map<ClientEntity>(clientInput);
-        await _service.RemoveAsync(clientToRemove);
+        await _clientService.RemoveAsync(clientId);
 
         return Ok();
     }
 
-    [Authorize]
     [HttpPut]
-    public async Task<ActionResult<ClientEntity>> UpdateClient(ClientPutModel clientInput)
+    public async Task<ActionResult<ClientGetVm>> UpdateClient(ClientUpdateVm clientInput)
     {
-        var client = _mapper.Map<ClientEntity>(clientInput);
-        await _service.UpdateAsync(client);
+        var clientOutput = await _clientService.UpdateAsync(clientInput);
 
-        return Ok();
+        return Ok(clientOutput);
     }
 
-    [HttpPost]
-    public async Task<ActionResult<ClientEntity>> RegisterClient(ClientPostModel clientInput)
+    [AllowAnonymous]
+    [HttpPost("register")]
+    public async Task<ActionResult<ClientDetailsVm>> RegisterClient(ClientRegisterVm clientRegisterVm)
     {
-        var client = _mapper.Map<ClientEntity>(clientInput);
-        await _service.RegisterAsync(client);
+        var (client, cart, wishList) = await _clientService.RegisterAsync(clientRegisterVm);
 
-        return Ok();
+        var clientDetails = new ClientDetailsVm
+        {
+            ClientId = client.Id,
+            FirstName = client.FirstName,
+            LastName = client.LastName,
+            Address = client.Address,
+            Email = client.Email,
+            CartId = cart.Id,
+            WishListId = wishList.Id
+        };
+
+        return Ok(clientDetails);
     }
 }

@@ -1,6 +1,7 @@
-﻿using BookShop.Data;
-using BookShop.Data.Entities;
+﻿using AutoMapper;
+using BookShop.Data;
 using BookShop.Services.Abstractions;
+using BookShop.Services.Models.ClientModels;
 using BookShop.Services.Options;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -17,19 +18,22 @@ public class CustomAuthenticationService : ICustomAuthenticationService
     private readonly JwtOptions _jwtOptions;
     private readonly BookShopDbContext _dbContext;
     private readonly IHttpContextAccessor _contextAccessor;
+    private readonly IMapper _mapper;
 
-    public CustomAuthenticationService(JwtOptions jwtOptions, BookShopDbContext dbContext, IHttpContextAccessor contextAccessor)
+    public CustomAuthenticationService(JwtOptions jwtOptions, BookShopDbContext dbContext,
+        IHttpContextAccessor contextAccessor, IMapper mapper)
     {
         _jwtOptions = jwtOptions;
         _dbContext = dbContext;
         _contextAccessor = contextAccessor;
+        _mapper = mapper;
     }
 
-    public string GenerateToken(ClientEntity clientEntity)
+    public string GenerateToken(string clientEmail)
     {
         var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.Email, clientEntity.Email),
+            new Claim(ClaimTypes.Email, clientEmail),
         };
 
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.SecretKey));
@@ -46,7 +50,7 @@ public class CustomAuthenticationService : ICustomAuthenticationService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    public async Task<ClientEntity?> AuthenticateAsync(string email, string password)
+    public async Task<ClientTokenVm?> AuthenticateAsync(string email, string password)
     {
         var client = await _dbContext.Clients.FirstOrDefaultAsync(c => c.Email == email);
 
@@ -55,7 +59,9 @@ public class CustomAuthenticationService : ICustomAuthenticationService
             return null;
         }
 
-        return client;
+        var clientTokenVm = _mapper.Map<ClientTokenVm>(client);
+
+        return clientTokenVm;
     }
 
     private bool VerifyPasswordHash(string password, string storedHash)

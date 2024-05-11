@@ -1,8 +1,8 @@
 using BookShop.Api.Extensions;
-using BookShop.Api.Mapping;
 using BookShop.Api.MiddleWares;
 using BookShop.Api.Services.Implementations;
 using BookShop.Data.Extensions;
+using BookShop.Services.Mapping;
 
 var builder = WebApplication.CreateBuilder(args);
 

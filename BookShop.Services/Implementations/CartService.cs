@@ -1,6 +1,7 @@
-﻿using BookShop.Data;
-using BookShop.Data.Entities;
+﻿using AutoMapper;
+using BookShop.Data;
 using BookShop.Services.Abstractions;
+using BookShop.Services.Models.CartItemModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -11,130 +12,83 @@ internal class CartService : ICartService
     private readonly BookShopDbContext _dbContext;
     private readonly ILogger<CartService> _logger;
     private readonly ICustomAuthenticationService _customAuthenticationService;
+    private readonly IMapper _mapper;
 
-    public CartService(BookShopDbContext dbContext, ILogger<CartService> logger, ICustomAuthenticationService customAuthenticationService)
+    public CartService(BookShopDbContext dbContext, ILogger<CartService> logger,
+        ICustomAuthenticationService customAuthenticationService, IMapper mapper)
     {
         _dbContext = dbContext;
         _logger = logger;
         _customAuthenticationService = customAuthenticationService;
+        _mapper = mapper;
     }
 
     public async Task ClearAllItemsAsync(long cartId)
     {
-        try
+        var cart = await _dbContext.Carts.FirstOrDefaultAsync(c => c.Id == cartId);
+
+        if (cart == null)
         {
-            var cart = await _dbContext.Carts.FirstOrDefaultAsync(c => c.Id == cartId);
-
-            if (cart == null)
-            {
-                throw new Exception("Cart not found");
-            }
-
-            var client = await _dbContext.Clients.FirstOrDefaultAsync(c => c.Id == cart.ClientId);
-
-            if (client == null)
-            {
-                throw new Exception("Client not found");
-            }
-
-            var checkingClientEmail = _customAuthenticationService.GetClientEmailFromToken();
-
-            if (client.Email != checkingClientEmail)
-            {
-                throw new Exception("Unauthorized: You can't clear Items from Cart of other Client");
-            }
-
-            if (cart.CartItems == null)
-            {
-                throw new Exception("Cart is already empty");
-            }
-
-            _dbContext.CartItems.RemoveRange(cart.CartItems);
-            await _dbContext.SaveChangesAsync();
-            _logger.LogInformation($"All CartItems cleared from Cart with Id {cartId} successfully");
+            throw new Exception("Cart not found");
         }
-        catch (Exception ex)
+
+        var client = await _dbContext.Clients.FirstOrDefaultAsync(c => c.Id == cart.ClientId);
+
+        if (client == null)
         {
-            _logger.LogError(ex, $"Error: {ex.Message}");
-            throw;
+            throw new Exception("Client not found");
         }
+
+        var checkingClientEmail = _customAuthenticationService.GetClientEmailFromToken();
+
+        if (client.Email != checkingClientEmail)
+        {
+            throw new Exception("Unauthorized: You can't clear Items from Cart of other Client");
+        }
+
+        if (cart.CartItems == null)
+        {
+            throw new Exception("Cart is already empty");
+        }
+
+        _dbContext.CartItems.RemoveRange(cart.CartItems);
+        await _dbContext.SaveChangesAsync();
+        _logger.LogInformation($"All CartItems cleared from Cart with Id {cartId} successfully");
     }
 
-    public async Task CreateAsync(long clientId)
+    public async Task<List<CartItemGetVm>> GetAllItemsAsync(long cartId)
     {
-        try
+        var cart = await _dbContext.Carts.FirstOrDefaultAsync(c => c.Id == cartId);
+
+        if (cart == null)
         {
-            var cart = await _dbContext.Carts.FirstOrDefaultAsync(c => c.Id == clientId);
-
-            if (cart != null)
-            {
-                throw new Exception($"Cart with ClientId {clientId} already exists");
-            }
-
-            var client = await _dbContext.Clients.FirstOrDefaultAsync(c => c.Id == clientId);
-
-            if (client == null)
-            {
-                throw new Exception("Client not found");
-            }
-
-            var checkingClientEmail = _customAuthenticationService.GetClientEmailFromToken();
-
-            if (client.Email != checkingClientEmail)
-            {
-                throw new Exception("Unauthorized: You can't create Cart for other Client");
-            }
-
-            var cartToAdd = new CartEntity { ClientId = clientId };
-
-            _dbContext.Carts.Add(cartToAdd);
-            await _dbContext.SaveChangesAsync();
-            _logger.LogInformation($"Cart with Id {cartToAdd.Id} added successfully for Client with Id {clientId}");
+            throw new Exception("Cart not found");
         }
-        catch (Exception ex)
+
+        var client = await _dbContext.Clients.FirstOrDefaultAsync(c => c.Id == cart.ClientId);
+
+        if (client == null)
         {
-            _logger.LogError(ex, $"Error: {ex.Message}");
-            throw;
+            throw new Exception("Client not found");
         }
-    }
 
-    public async Task<List<CartItemEntity>> GetAllItemsAsync(long cartId)
-    {
-        try
+        var checkingClientEmail = _customAuthenticationService.GetClientEmailFromToken();
+
+        if (client.Email != checkingClientEmail)
         {
-            var cart = await _dbContext.Carts.FirstOrDefaultAsync(c => c.Id == cartId);
-
-            if (cart == null)
-            {
-                throw new Exception("Cart not found");
-            }
-
-            var client = await _dbContext.Clients.FirstOrDefaultAsync(c => c.Id == cart.ClientId);
-
-            if (client == null)
-            {
-                throw new Exception("Client not found");
-            }
-
-            var checkingClientEmail = _customAuthenticationService.GetClientEmailFromToken();
-
-            if (client.Email != checkingClientEmail)
-            {
-                throw new Exception("Unauthorized: You can get Items only of your own cart");
-            }
-
-            var listToReturn = new List<CartItemEntity>();
-            var listItemsFromDb = await _dbContext.CartItems.Where(ci => ci.CartId == cartId).ToListAsync();
-
-            listToReturn.AddRange(listItemsFromDb);
-
-            return listToReturn;
+            throw new Exception("Unauthorized: You can get Items only of your own cart");
         }
-        catch (Exception ex)
+
+        var cartItemGetVmList = new List<CartItemGetVm>();
+        var cartItemsDb = await _dbContext.CartItems.Where(ci => ci.CartId == cartId).ToListAsync();
+
+        foreach (var cartItem in cartItemsDb)
         {
-            _logger.LogError(ex, $"Error: {ex.Message}");
-            throw;
+            var listItemGetVm = _mapper.Map<CartItemGetVm>(cartItem);
+            cartItemGetVmList.Add(listItemGetVm);
         }
+
+        return cartItemGetVmList;
     }
 }
 
