@@ -1,8 +1,7 @@
 ﻿namespace BookShop.Services.Models.ProductModels;
 
-public class ProductUpdateVm 
+public class ProductAddModel
 {
-    public long Id { get; set; }
     public string Name { get; set; } = null!;
     public decimal Price { get; set; }
     public string Manufacturer { get; set; } = null!;

@@ -18,10 +18,18 @@ public class CartController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<CartItemGetVm>>> GetAllItems(long cartId)
+    public async Task<ActionResult<List<CartItemModel>>> GetAllItems()
     {
-        var cartItems = await _service.GetAllItemsAsync(cartId);
+        var cartItems = await _service.GetAllItemsAsync();
         
         return Ok(cartItems);
+    }
+
+    [HttpDelete]
+    public async Task<IActionResult> ClearAllItems()
+    {
+        await _service.ClearAllItemsAsync();
+
+        return Ok();
     }
 }

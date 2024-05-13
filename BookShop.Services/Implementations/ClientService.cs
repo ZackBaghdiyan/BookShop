@@ -7,40 +7,36 @@ using System.Security.Cryptography;
 using BookShop.Services.Abstractions;
 using BookShop.Services.Models.ClientModels;
 using AutoMapper;
+using BookShop.Common.ClientService;
 using BookShop.Services.Exceptions;
 
 internal class ClientService : IClientService
 {
     private readonly BookShopDbContext _dbContext;
     private readonly ILogger<ClientService> _logger;
-    private readonly ICustomAuthenticationService _customAuthenticationService;
     private readonly IMapper _mapper;
+    private readonly ClientContextReader _clientContextReader;
 
     public ClientService(BookShopDbContext bookShopDbContext, ILogger<ClientService> logger,
-        ICustomAuthenticationService customAuthenticationService, IMapper mapper)
+        IMapper mapper, ClientContextReader clientContextReader)
     {
         _dbContext = bookShopDbContext;
         _logger = logger;
-        _customAuthenticationService = customAuthenticationService;
         _mapper = mapper;
+        _clientContextReader = clientContextReader;
     }
 
-    public async Task<(ClientGetVm, CartEntity, WishListEntity)> RegisterAsync(ClientRegisterVm clientRegisterVm)
+    public async Task<ClientModel> RegisterAsync(ClientRegisterModel clientRegisterModel)
     {
-        if (clientRegisterVm == null)
-        {
-            throw new Exception("There is nothing to create");
-        }
-
         using (var transaction = _dbContext.Database.BeginTransaction())
         {
             try
             {
-                var client = _mapper.Map<ClientEntity>(clientRegisterVm);
-                client.Password = HashPassword(clientRegisterVm.Password);
-                _dbContext.Clients.Add(client);
+                var client = _mapper.Map<ClientEntity>(clientRegisterModel);
+                client.Password = HashPassword(clientRegisterModel.Password);
 
-                _logger.LogInformation($"Client with Id {client.Id} added successfully.");
+                _dbContext.Clients.Add(client);
+                await _dbContext.SaveChangesAsync();
 
                 var cart = new CartEntity { ClientId = client.Id };
                 _dbContext.Carts.Add(cart);
@@ -48,14 +44,14 @@ internal class ClientService : IClientService
                 var wishList = new WishListEntity { ClientId = client.Id };
                 _dbContext.WishLists.Add(wishList);
 
-                _logger.LogInformation($"Cart and WishList created successfully for Client with Id {client.Id}");
-
-                var clientGetVm = _mapper.Map<ClientGetVm>(client);
                 await _dbContext.SaveChangesAsync();
+                _logger.LogInformation($"Client with Id {client.Id} added successfully.");
+
+                var clientModel = _mapper.Map<ClientModel>(client);
 
                 transaction.Commit();
 
-                return (clientGetVm, cart, wishList);
+                return clientModel;
             }
             catch (Exception ex)
             {
@@ -65,22 +61,15 @@ internal class ClientService : IClientService
         }
     }
 
-    public async Task<ClientGetVm> UpdateAsync(ClientUpdateVm clientUpdateVm)
+    public async Task<ClientModel> UpdateAsync(ClientUpdateModel client)
     {
-        var client = _mapper.Map<ClientEntity>(clientUpdateVm);
+        var clientId = _clientContextReader.GetClientContextId();
 
-        var checkingClientEmail = _customAuthenticationService.GetClientEmailFromToken();
-
-        var clientToUpdate = await _dbContext.Clients.FirstOrDefaultAsync(c => c.Id == client.Id);
+        var clientToUpdate = await _dbContext.Clients.FirstOrDefaultAsync(c => c.Id == clientId);
 
         if (clientToUpdate is null)
         {
             throw new InvalidOperationException("Client not found");
-        }
-
-        if (clientToUpdate.Email != checkingClientEmail)
-        {
-            throw new InvalidOperationException("Unauthorized: You can only update your own client information");
         }
 
         clientToUpdate.FirstName = client.FirstName;
@@ -94,15 +83,17 @@ internal class ClientService : IClientService
         }
 
         await _dbContext.SaveChangesAsync();
-        _logger.LogInformation($"Client with Id {client.Id} modified successfully.");
+        _logger.LogInformation($"Client with Id {clientId} modified successfully.");
 
-        var clientGetVm = _mapper.Map<ClientGetVm>(client);
+        var clientModel = _mapper.Map<ClientModel>(clientToUpdate);
 
-        return clientGetVm;
+        return clientModel;
     }
 
-    public async Task RemoveAsync(long clientId)
+    public async Task RemoveAsync()
     {
+        var clientId = _clientContextReader.GetClientContextId();
+
         var clientToRemove = await _dbContext.Clients.FirstOrDefaultAsync(c => c.Id == clientId);
 
         if (clientToRemove is null)
@@ -110,45 +101,42 @@ internal class ClientService : IClientService
             throw new Exception("There is no matching Client");
         }
 
-        var checkingClientEmail = _customAuthenticationService.GetClientEmailFromToken();
-
-        if (clientToRemove.Email != checkingClientEmail)
-        {
-            throw new InvalidOperationException("Unauthorized: You can only remove your own client.");
-        }
-
         _dbContext.Clients.Remove(clientToRemove);
         await _dbContext.SaveChangesAsync();
         _logger.LogInformation($"Client with Id {clientToRemove.Id} removed successfully.");
     }
 
-    private string HashPassword(string password)
+    public async Task<ClientModel?> GetClientAsync()
     {
-        using (SHA256 sha256 = SHA256.Create())
-        {
-            byte[] hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-            StringBuilder builder = new StringBuilder();
+        var clientId = _clientContextReader.GetClientContextId();
 
-            for (int i = 0; i < hashedBytes.Length; i++)
-            {
-                builder.Append(hashedBytes[i].ToString("x2"));
-            }
-
-            return builder.ToString();
-        }
-    }
-
-    public async Task<ClientGetVm> GetByIdAsync(long clientId)
-    {
         var client = await _dbContext.Clients.FirstOrDefaultAsync(c => c.Id == clientId);
 
-        if (client == null)
+        var clientModel = _mapper.Map<ClientModel>(client);
+
+        return clientModel;
+    }
+
+    public async Task<ClientModel?> GetByEmailAndPasswordAsync(string email, string password)
+    {
+        var client = await _dbContext.Clients.FirstOrDefaultAsync(c => c.Email == email);
+
+        if (client != null)
         {
-            throw new Exception("Client not found");
+            var hashedPassword = HashPassword(password);
+            if (client.Password == hashedPassword)
+            {
+                return _mapper.Map<ClientModel?>(client);
+            }
         }
 
-        var clientGetVm = _mapper.Map<ClientGetVm>(client);
+        return null;
+    }
 
-        return clientGetVm;
+    private string HashPassword(string password)
+    {
+        var passwordBytes = Encoding.UTF8.GetBytes(password);
+        var passwordHash = SHA256.HashData(passwordBytes);
+        return Convert.ToHexString(passwordHash);
     }
 }

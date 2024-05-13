@@ -1,5 +1,4 @@
 ﻿using BookShop.Services.Models.PaymentMethodModels;
-using BookShop.Data.Entities;
 using BookShop.Services.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,15 +18,15 @@ public class PaymentMethodController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<PaymentMethodGetVm>> AddPaymentMethod(PaymentMethodAddVm paymentMethodAddVm)
+    public async Task<ActionResult<PaymentMethodModel>> AddPaymentMethod(PaymentMethodAddModel paymentMethodAddModel)
     {
-        var paymentMethodOutput = await _service.AddAsync(paymentMethodAddVm);
+        var paymentMethodOutput = await _service.AddAsync(paymentMethodAddModel);
 
         return Ok(paymentMethodOutput);
     }
 
     [HttpDelete]
-    public async Task<ActionResult<PaymentMethodEntity>> RemovePaymentMethod(long paymentMethodId)
+    public async Task<IActionResult> RemovePaymentMethod(long paymentMethodId)
     {
         await _service.RemoveAsync(paymentMethodId);
 
@@ -35,9 +34,9 @@ public class PaymentMethodController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<PaymentMethodGetVm>>> GetAllPaymentMethods(long clientId)
+    public async Task<ActionResult<List<PaymentMethodModel>>> GetAllPaymentMethods()
     {
-        var paymentMethodsOutput = await _service.GetAllAsync(clientId);
+        var paymentMethodsOutput = await _service.GetAllAsync();
 
         return Ok(paymentMethodsOutput);
     }

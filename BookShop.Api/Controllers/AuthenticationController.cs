@@ -10,29 +10,29 @@ namespace BookShop.Api.Controllers;
 public class AuthenticationController : ControllerBase
 {
     private readonly ICustomAuthenticationService _authenticationService;
+    private readonly IClientService _clientService;
 
-    public AuthenticationController(ICustomAuthenticationService authenticationService)
+    public AuthenticationController(ICustomAuthenticationService authenticationService, IClientService clientService)
     {
         _authenticationService = authenticationService;
+        _clientService = clientService;
     }
 
     [HttpPost]
     [Route("login")]
-    public async Task<ActionResult<TokenLoginVm>> Login(ClientLoginVm clientLoginVm)
+    public async Task<ActionResult<TokenLoginModel>> Login(ClientLoginModel clientLoginModel)
     {
-        var clientEntity = await _authenticationService.AuthenticateAsync(clientLoginVm.Email, clientLoginVm.Password);
-        var tokenLoginVm = new TokenLoginVm();
+        var clientEntity = await _clientService.GetByEmailAndPasswordAsync(clientLoginModel.Email, clientLoginModel.Password);
 
-        if (clientEntity != null)
+        if (clientEntity == null)
         {
-            var token = _authenticationService.GenerateToken(clientLoginVm.Email);
-            tokenLoginVm.Token = token;
-
-            return Ok(tokenLoginVm);
+            return Unauthorized();
         }
 
-        tokenLoginVm.Token = "Invalid email or password";
+        var token = _authenticationService.GenerateToken(clientEntity);
 
-        return Unauthorized(tokenLoginVm);
+        var tokenModel = new TokenLoginModel { Token = token };
+
+        return Ok(tokenModel);
     }
 }

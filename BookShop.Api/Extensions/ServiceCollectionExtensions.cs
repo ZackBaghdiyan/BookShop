@@ -1,4 +1,7 @@
-﻿using BookShop.Services.Options;
+﻿using BookShop.Api.MiddleWares;
+using BookShop.Api.Services.Implementations;
+using BookShop.Common.ClientService;
+using BookShop.Services.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -8,7 +11,7 @@ namespace BookShop.Api.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static void ConfigureSwagger(this IServiceCollection services)
+    public static IServiceCollection ConfigureSwagger(this IServiceCollection services)
     {
         services.AddSwaggerGen();
         services.AddSwaggerGen(c =>
@@ -40,9 +43,11 @@ public static class ServiceCollectionExtensions
                 }
             });
         });
+
+        return services;
     }
 
-    public static void ConfigureJwt(this IServiceCollection services, JwtOptions jwtOptions)
+    public static IServiceCollection ConfigureJwt(this IServiceCollection services, JwtOptions jwtOptions)
     {
         var key = Encoding.ASCII.GetBytes(jwtOptions.SecretKey!);
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -59,5 +64,28 @@ public static class ServiceCollectionExtensions
                     IssuerSigningKey = new SymmetricSecurityKey(key),
                 };
             });
+
+        return services;
+    }
+
+    public static IServiceCollection AddGlobalExceptionHandler(this IServiceCollection services)
+    {
+        services.AddTransient<GlobalExceptionHandler>();
+
+        return services;
+    }
+    
+    public static IServiceCollection AddClientContextMiddleware(this IServiceCollection services)
+    {
+        services.AddTransient<ClientContextMiddleware>();
+
+        return services;
+    }
+    
+    public static IServiceCollection AddDatabaseMigrationService(this IServiceCollection services)
+    {
+        services.AddHostedService<DatabaseMigrationService>();
+
+        return services;
     }
 }

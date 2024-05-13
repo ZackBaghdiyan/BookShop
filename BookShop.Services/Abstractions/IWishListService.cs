@@ -4,6 +4,6 @@ namespace BookShop.Services.Abstractions;
 
 public interface IWishListService
 {
-    Task<List<WishListItemGetVm>> GetAllItemsAsync(long wishListId);
-    Task ClearAllItemsAsync(long wishListId);
+    Task<List<WishListItemModel>> GetAllItemsAsync();
+    Task ClearAllItemsAsync();
 }

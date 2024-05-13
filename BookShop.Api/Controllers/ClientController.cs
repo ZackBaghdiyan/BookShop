@@ -1,8 +1,8 @@
 ﻿using BookShop.Services.Models.ClientModels;
-using BookShop.Data.Entities;
 using BookShop.Services.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
 namespace BookShop.Api.Controllers;
 
 [Authorize]
@@ -18,38 +18,27 @@ public class ClientController : ControllerBase
     }
 
     [HttpDelete]
-    public async Task<ActionResult<ClientEntity>> RemoveClient(long clientId)
+    public async Task<IActionResult> RemoveClient()
     {
-        await _clientService.RemoveAsync(clientId);
+        await _clientService.RemoveAsync();
 
         return Ok();
     }
 
     [HttpPut]
-    public async Task<ActionResult<ClientGetVm>> UpdateClient(ClientUpdateVm clientInput)
+    public async Task<ActionResult<ClientModel>> UpdateClient(ClientUpdateModel clientInput)
     {
         var clientOutput = await _clientService.UpdateAsync(clientInput);
 
         return Ok(clientOutput);
     }
 
-    [AllowAnonymous]
     [HttpPost("register")]
-    public async Task<ActionResult<ClientDetailsVm>> RegisterClient(ClientRegisterVm clientRegisterVm)
+    [AllowAnonymous]
+    public async Task<ActionResult<ClientModel>> RegisterClient(ClientRegisterModel clientRegisterModel)
     {
-        var (client, cart, wishList) = await _clientService.RegisterAsync(clientRegisterVm);
+        var client = await _clientService.RegisterAsync(clientRegisterModel);
 
-        var clientDetails = new ClientDetailsVm
-        {
-            ClientId = client.Id,
-            FirstName = client.FirstName,
-            LastName = client.LastName,
-            Address = client.Address,
-            Email = client.Email,
-            CartId = cart.Id,
-            WishListId = wishList.Id
-        };
-
-        return Ok(clientDetails);
+        return Ok(client);
     }
 }

@@ -1,5 +1,4 @@
 ﻿using BookShop.Services.Models.WishListItemModels;
-using BookShop.Data.Entities;
 using BookShop.Services.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,7 +18,7 @@ public class WishListItemController : ControllerBase
     }
 
     [HttpDelete]
-    public async Task<ActionResult<WishListItemEntity>> RemoveItem(long wishListItemId)
+    public async Task<IActionResult> RemoveItem(long wishListItemId)
     {
         await _service.RemoveAsync(wishListItemId);
 
@@ -27,9 +26,9 @@ public class WishListItemController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<WishListItemGetVm>> AddItem(WishListItemAddVm wishListItemAddVm)
+    public async Task<ActionResult<WishListItemModel>> AddItem(WishListItemAddModel wishListItemAddModel)
     {
-        var wishListItemOutput = await _service.AddAsync(wishListItemAddVm);
+        var wishListItemOutput = await _service.AddAsync(wishListItemAddModel);
 
         return Ok(wishListItemOutput);
     }

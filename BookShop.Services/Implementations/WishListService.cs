@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper;
 using BookShop.Services.Models.WishListItemModels;
+using BookShop.Common.ClientService;
 
 namespace BookShop.Services.Implementations;
 
@@ -11,83 +12,58 @@ internal class WishListService : IWishListService
 {
     private readonly BookShopDbContext _dbContext;
     private readonly ILogger<WishListService> _logger;
-    private readonly ICustomAuthenticationService _customAuthenticationService;
     private readonly IMapper _mapper;
+    private readonly ClientContextReader _clientContextReader;
 
     public WishListService(BookShopDbContext dbContext, ILogger<WishListService> logger,
-        ICustomAuthenticationService customAuthenticationService, IMapper mapper)
+        IMapper mapper, ClientContextReader clientContextReader)
     {
         _dbContext = dbContext;
         _logger = logger;
-        _customAuthenticationService = customAuthenticationService;
         _mapper = mapper;
+        _clientContextReader = clientContextReader;
     }
 
-    public async Task ClearAllItemsAsync(long wishListId)
+    public async Task ClearAllItemsAsync()
     {
-        var wishList = await _dbContext.WishLists.FirstOrDefaultAsync(w => w.Id == wishListId);
+        var clientId = _clientContextReader.GetClientContextId();
+
+        var wishList = await _dbContext.WishLists.Include(w => w.ClientEntity).FirstOrDefaultAsync(w => w.ClientId == clientId);
 
         if (wishList == null)
         {
             throw new Exception("WishList not found");
         }
 
-        var client = await _dbContext.Clients.FirstOrDefaultAsync(c => c.Id == wishList.ClientId);
+        var wishListItemsToClear = await _dbContext.WishListItems.Where(wi => wi.WishListId == wishList.Id).ToListAsync();
 
-        if (client == null)
-        {
-            throw new Exception("Client not found");
-        }
-
-        var checkingClientEmail = _customAuthenticationService.GetClientEmailFromToken();
-
-        if (client.Email != checkingClientEmail)
-        {
-            throw new Exception("Unauthorized: You can't clear Items from WishList of other Client");
-        }
-
-        if (wishList.WishListItems == null)
-        {
-            throw new Exception("WishList is already empty");
-        }
-
-        _dbContext.WishListItems.RemoveRange(wishList.WishListItems);
+        _dbContext.WishListItems.RemoveRange(wishListItemsToClear);
+        wishList.WishListItems.Clear();
         await _dbContext.SaveChangesAsync();
-        _logger.LogInformation($"All WishListItems cleared from WishList with Id {wishListId} successfully");
+        _logger.LogInformation("WishListItems cleared successfully");
     }
 
-    public async Task<List<WishListItemGetVm>> GetAllItemsAsync(long wishListId)
+    public async Task<List<WishListItemModel>> GetAllItemsAsync()
     {
-        var wishList = await _dbContext.WishLists.FirstOrDefaultAsync(w => w.Id == wishListId);
+        var clientId = _clientContextReader.GetClientContextId();
+
+        var wishList = await _dbContext.WishLists.Include(w => w.WishListItems).FirstOrDefaultAsync(w => w.ClientId == clientId);
 
         if (wishList == null)
         {
             throw new Exception("WishList not found");
         }
 
-        var client = await _dbContext.Clients.FirstOrDefaultAsync(c => c.Id == wishList.ClientId);
+        var wishListItemsToReturn = await _dbContext.WishListItems.Where(wi => wi.WishListId == wishList.Id).ToListAsync();
+        var wishListItemModels = new List<WishListItemModel>();
 
-        if (client == null)
+        foreach (var wishListItem in wishListItemsToReturn)
         {
-            throw new Exception("Client not found");
+            var wishListItemModel = _mapper.Map<WishListItemModel>(wishListItem);
+
+            wishListItemModels.Add(wishListItemModel);
         }
 
-        var checkingClientEmail = _customAuthenticationService.GetClientEmailFromToken();
-
-        if (client.Email != checkingClientEmail)
-        {
-            throw new Exception("Unauthorized: You can get Items only of your own WishList");
-        }
-
-        var wishListItemsGetVmList = new List<WishListItemGetVm>();
-        var listItemsFromDb = await _dbContext.WishListItems.Where(ci => ci.WishListId == wishListId).ToListAsync();
-
-        foreach( var WishListItem in listItemsFromDb)
-        {
-            var wishListItemGetVm = _mapper.Map<WishListItemGetVm>(WishListItem);
-            wishListItemsGetVmList.Add(wishListItemGetVm);
-        }
-
-        return wishListItemsGetVmList;
+        return wishListItemModels;
     }
 }

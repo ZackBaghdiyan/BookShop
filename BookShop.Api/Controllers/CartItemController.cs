@@ -1,5 +1,4 @@
 ﻿using BookShop.Services.Models.CartItemModels;
-using BookShop.Data.Entities;
 using BookShop.Services.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,15 +18,15 @@ public class CartItemController : ControllerBase
     }
 
     [HttpDelete]
-    public async Task<ActionResult<CartItemEntity>> RemoveItem(long carItemId)
+    public async Task<IActionResult> RemoveItem(long cartItemId)
     {
-        await _service.RemoveAsync(carItemId);
+        await _service.RemoveAsync(cartItemId);
 
         return Ok();
     }
 
     [HttpPost]
-    public async Task<ActionResult<CartItemGetVm>> AddItem(CartItemAddVm cartItem)
+    public async Task<ActionResult<CartItemModel>> AddItem(CartItemAddModel cartItem)
     {
         var cartItemOutput = await _service.AddAsync(cartItem);
 
@@ -35,7 +34,7 @@ public class CartItemController : ControllerBase
     }
 
     [HttpPut]
-    public async Task<ActionResult<CartItemGetVm>> UpdateItem(CartItemUpdateVm cartItem)
+    public async Task<ActionResult<CartItemModel>> UpdateItem(CartItemUpdateModel cartItem)
     {
         var cartItemOutput =await _service.UpdateAsync(cartItem);
 

@@ -5,7 +5,6 @@ using BookShop.Services.Abstractions;
 using BookShop.Services.Models.ProductModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace BookShop.Services.Implementations;
 
@@ -22,18 +21,35 @@ internal class ProductService : IProductService
         _mapper = mapper;
     }
 
-    public async Task<ProductGetVm> AddAsync(ProductAddVm productAddVm)
+    public async Task<ProductModel> AddAsync(ProductAddModel productAddModel)
     {
-        var product = _mapper.Map<ProductEntity>(productAddVm);
-        product.Details = SerializeDetails(productAddVm.Details);
+        var productCheck = await _dbContext.Products.FirstOrDefaultAsync(p => p.Manufacturer == productAddModel.Manufacturer
+        && p.Details == p.Details && p.Name == productAddModel.Name && p.Price == productAddModel.Price);
+
+        var product = new ProductEntity();
+        var productModel = new ProductModel();
+
+        if (productCheck != null)
+        {
+            productCheck.Count += productAddModel.Count;
+
+            await _dbContext.SaveChangesAsync();
+            _logger.LogInformation($"Product with Id {productCheck.Id} added successfully");
+
+            productModel = _mapper.Map<ProductModel>(productCheck);
+
+            return productModel;
+        }
+
+        product = _mapper.Map<ProductEntity>(productAddModel);
 
         _dbContext.Products.Add(product);
         await _dbContext.SaveChangesAsync();
         _logger.LogInformation($"Product with Id {product.Id} added successfully");
 
-        var productGetVm = _mapper.Map<ProductGetVm>(product);
+        productModel = _mapper.Map<ProductModel>(product);
 
-        return productGetVm;
+        return productModel;
     }
 
     public async Task ClearAsync()
@@ -44,21 +60,15 @@ internal class ProductService : IProductService
         _logger.LogInformation("All products cleared successfully");
     }
 
-    public async Task<List<ProductGetVm>> GetAllAsync()
+    public async Task<List<ProductModel>> GetAllAsync()
     {
-        var productGetVmList = new List<ProductGetVm>();
         var productListDb = await _dbContext.Products.ToListAsync();
+        var productModelList = _mapper.Map<List<ProductModel>>(productListDb);
 
-        foreach(var product in productListDb)
-        {
-            var productGetVm = _mapper.Map<ProductGetVm>(product);
-            productGetVmList.Add(productGetVm);
-        }
-
-        return productGetVmList;
+        return productModelList;
     }
 
-    public async Task<ProductGetVm> GetByIdAsync(long productId)
+    public async Task<ProductModel> GetByIdAsync(long productId)
     {
         var product = await _dbContext.Products.FirstOrDefaultAsync(p => p.Id == productId);
 
@@ -67,9 +77,9 @@ internal class ProductService : IProductService
             throw new Exception("Product not found");
         }
 
-        var productGetVm = _mapper.Map<ProductGetVm>(product);
+        var productModel = _mapper.Map<ProductModel>(product);
 
-        return productGetVm;
+        return productModel;
     }
 
     public async Task RemoveAsync(long productId)
@@ -86,38 +96,21 @@ internal class ProductService : IProductService
         _logger.LogInformation($"Product with Id {productId} removed successfully");
     }
 
-    public async Task<ProductGetVm> UpdateAsync(ProductUpdateVm productUpdateVm)
+    public async Task<ProductModel> UpdateAsync(ProductUpdateModel productUpdateModel)
     {
-        if(productUpdateVm == null)
-        {
-            throw new Exception("Nothing to Update");
-        }
+        var productToUpdate = await GetByIdAsync(productUpdateModel.Id);
 
-        var productEntity = _mapper.Map<ProductEntity>(productUpdateVm);
-
-        var productToUpdate = await _dbContext.Products.FirstOrDefaultAsync(p => p.Id == productEntity.Id);
-
-        if(productToUpdate == null)
-        {
-            throw new Exception("Product not found");
-        }
-
-        productToUpdate.Name = productEntity.Name;
-        productToUpdate.Price = productEntity.Price;
-        productToUpdate.Count = productEntity.Count;
-        productToUpdate.Manufacturer = productEntity.Manufacturer;
-        productToUpdate.Details = SerializeDetails(productEntity.Details);
+        productToUpdate.Name = productUpdateModel.Name;
+        productToUpdate.Price = productUpdateModel.Price;
+        productToUpdate.Count = productUpdateModel.Count;
+        productToUpdate.Manufacturer = productUpdateModel.Manufacturer;
+        productToUpdate.Details = productUpdateModel.Details;
 
         await _dbContext.SaveChangesAsync();
         _logger.LogInformation($"Product with Id {productToUpdate.Id} updated successfully");
 
-        var productGetVm = _mapper.Map<ProductGetVm>(productToUpdate);
+        var productModel = _mapper.Map<ProductModel>(productToUpdate);
 
-        return productGetVm;
-    }
-
-    private string SerializeDetails(string details)
-    {
-        return JsonConvert.SerializeObject(details);
+        return productModel;
     }
 }

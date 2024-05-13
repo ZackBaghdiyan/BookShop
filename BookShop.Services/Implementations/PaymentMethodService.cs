@@ -1,4 +1,5 @@
-﻿using BookShop.Data;
+﻿using BookShop.Common.ClientService;
+using BookShop.Data;
 using BookShop.Data.Entities;
 using BookShop.Data.Models;
 using BookShop.Services.Abstractions;
@@ -13,115 +14,72 @@ internal class PaymentMethodService : IPaymentMethodService
 {
     private readonly BookShopDbContext _dbContext;
     private readonly ILogger<PaymentMethodService> _logger;
-    private readonly ICustomAuthenticationService _customAuthenticationService;
+    private readonly ClientContextReader _clientContextReader;
 
-    public PaymentMethodService(BookShopDbContext bookShopDbContext, ILogger<PaymentMethodService> logger,
-        ICustomAuthenticationService customAuthenticationService)
+    public PaymentMethodService(BookShopDbContext bookShopDbContext,
+        ILogger<PaymentMethodService> logger, ClientContextReader clientContextReader)
     {
         _dbContext = bookShopDbContext;
         _logger = logger;
-        _customAuthenticationService = customAuthenticationService;
+        _clientContextReader = clientContextReader;
     }
 
-    public async Task<PaymentMethodGetVm> AddAsync(PaymentMethodAddVm paymentMethodAddVm)
+    public async Task<PaymentMethodModel> AddAsync(PaymentMethodAddModel paymentMethodAddModel)
     {
-        if (paymentMethodAddVm == null)
-        {
-            throw new Exception("There is nothing to add");
-        }
+        var clientId = _clientContextReader.GetClientContextId();
 
         var paymentMethod = new PaymentMethodEntity()
         {
-            ClientId = paymentMethodAddVm.ClientId,
-            PaymentMethod = paymentMethodAddVm.PaymentMethod,
-            Details = JsonConvert.SerializeObject(paymentMethodAddVm.Details)
+            ClientId = clientId,
+            PaymentMethod = paymentMethodAddModel.PaymentMethod,
+            Details = JsonConvert.SerializeObject(paymentMethodAddModel.Details)
         };
-
-        var client = await _dbContext.Clients.FirstOrDefaultAsync(c => c.Id == paymentMethod.ClientId);
-
-        if (client == null)
-        {
-            throw new Exception("Client not found");
-        }
-
-        var checkingClientEmail = _customAuthenticationService.GetClientEmailFromToken();
-
-        if (client.Email != checkingClientEmail)
-        {
-            throw new Exception("Unauthorized: You can't add PaymentMethod for other Client");
-        }
 
         _dbContext.PaymentMethods.Add(paymentMethod);
         await _dbContext.SaveChangesAsync();
         _logger.LogInformation($"PaymentMethod with Id {paymentMethod.Id} added successfully");
 
-        var paymentMethodGetVm = new PaymentMethodGetVm()
+        var paymentMethodModel = new PaymentMethodModel()
         {
             Id = paymentMethod.Id,
-            ClientId = paymentMethod.ClientId,
             PaymentMethod = paymentMethod.PaymentMethod,
             Details = JsonConvert.DeserializeObject<CardDetails>(paymentMethod.Details)
         };
 
-        return paymentMethodGetVm;
+        return paymentMethodModel;
     }
 
-    public async Task<List<PaymentMethodGetVm>> GetAllAsync(long clientId)
+    public async Task<List<PaymentMethodModel>> GetAllAsync()
     {
-        var client = await _dbContext.Clients.FirstOrDefaultAsync(c => c.Id == clientId);
+        var clientId = _clientContextReader.GetClientContextId();
 
-        if (client == null)
-        {
-            throw new Exception("Client not found");
-        }
-
-        var checkingClientEmail = _customAuthenticationService.GetClientEmailFromToken();
-
-        if (client.Email != checkingClientEmail)
-        {
-            throw new Exception("Unauthorized: You can't get PaymentMethods of other Client");
-        }
-
-        var paymentMethodsGetVmList = new List<PaymentMethodGetVm>();
-        var paymentMethodsDb = await _dbContext.PaymentMethods.ToListAsync();
+        var paymentMethodsDb = await _dbContext.PaymentMethods.Where(pm => pm.ClientId == clientId).ToListAsync();
+        var paymentMethodsModelList = new List<PaymentMethodModel>();
 
         foreach (var paymentMethod in paymentMethodsDb)
         {
-            var paymentMethodGetVm = new PaymentMethodGetVm()
+            var paymentMethodModel = new PaymentMethodModel()
             {
                 Id = paymentMethod.Id,
-                ClientId = paymentMethod.ClientId,
                 PaymentMethod = paymentMethod.PaymentMethod,
                 Details = JsonConvert.DeserializeObject<CardDetails>(paymentMethod.Details)
             };
 
-            paymentMethodsGetVmList.Add(paymentMethodGetVm);
+            paymentMethodsModelList.Add(paymentMethodModel);
         }
 
-        return paymentMethodsGetVmList;
+        return paymentMethodsModelList;
     }
 
     public async Task RemoveAsync(long paymentMethodId)
     {
-        var paymentMethod = await _dbContext.PaymentMethods.FirstOrDefaultAsync(pm => pm.Id == paymentMethodId);
+        var clientId = _clientContextReader.GetClientContextId();
+
+        var paymentMethod = await _dbContext.PaymentMethods.FirstOrDefaultAsync(pm => pm.Id == paymentMethodId && pm.ClientId == clientId);
 
         if (paymentMethod == null)
         {
             throw new Exception("PaymentMethod not found");
-        }
-
-        var client = await _dbContext.Clients.FirstOrDefaultAsync(c => c.Id == paymentMethod.ClientId);
-
-        if (client == null)
-        {
-            throw new Exception("Client not found");
-        }
-
-        var checkingClientEmail = _customAuthenticationService.GetClientEmailFromToken();
-
-        if (client.Email != checkingClientEmail)
-        {
-            throw new Exception("Unauthorized: You can't add PaymentMethod for other Client");
         }
 
         _dbContext.PaymentMethods.Remove(paymentMethod);

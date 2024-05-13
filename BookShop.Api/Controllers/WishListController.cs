@@ -18,10 +18,18 @@ public class WishListController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<WishListItemGetVm>>> GetAllItems(long wishListId)
+    public async Task<ActionResult<List<WishListItemModel>>> GetAllItems()
     {
-        var wishListItemsOutput = await _service.GetAllItemsAsync(wishListId);
+        var wishListItemsOutput = await _service.GetAllItemsAsync();
 
         return Ok(wishListItemsOutput);
+    }
+
+    [HttpDelete]
+    public async Task<IActionResult> ClearAllItems()
+    {
+        await _service.ClearAllItemsAsync();
+
+        return Ok();
     }
 }

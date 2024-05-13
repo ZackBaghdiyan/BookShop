@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using BookShop.Common.ClientService;
 using BookShop.Data;
 using BookShop.Services.Abstractions;
 using BookShop.Services.Models.CartItemModels;
@@ -11,84 +12,58 @@ internal class CartService : ICartService
 {
     private readonly BookShopDbContext _dbContext;
     private readonly ILogger<CartService> _logger;
-    private readonly ICustomAuthenticationService _customAuthenticationService;
     private readonly IMapper _mapper;
+    private readonly ClientContextReader _clientContextReader;
 
-    public CartService(BookShopDbContext dbContext, ILogger<CartService> logger,
-        ICustomAuthenticationService customAuthenticationService, IMapper mapper)
+    public CartService(BookShopDbContext dbContext, ILogger<CartService> logger, IMapper mapper, ClientContextReader clientContextReader)
     {
         _dbContext = dbContext;
         _logger = logger;
-        _customAuthenticationService = customAuthenticationService;
         _mapper = mapper;
+        _clientContextReader = clientContextReader;
     }
 
-    public async Task ClearAllItemsAsync(long cartId)
+    public async Task ClearAllItemsAsync()
     {
-        var cart = await _dbContext.Carts.FirstOrDefaultAsync(c => c.Id == cartId);
+        var clientId = _clientContextReader.GetClientContextId();
+
+        var cart = await _dbContext.Carts.Include(c => c.Client).FirstOrDefaultAsync(c => c.ClientId == clientId);
 
         if (cart == null)
         {
             throw new Exception("Cart not found");
         }
 
-        var client = await _dbContext.Clients.FirstOrDefaultAsync(c => c.Id == cart.ClientId);
+        var cartItemsToClear = await _dbContext.CartItems.Where(ci => ci.CartId == cart.Id).ToListAsync();
 
-        if (client == null)
-        {
-            throw new Exception("Client not found");
-        }
-
-        var checkingClientEmail = _customAuthenticationService.GetClientEmailFromToken();
-
-        if (client.Email != checkingClientEmail)
-        {
-            throw new Exception("Unauthorized: You can't clear Items from Cart of other Client");
-        }
-
-        if (cart.CartItems == null)
-        {
-            throw new Exception("Cart is already empty");
-        }
-
-        _dbContext.CartItems.RemoveRange(cart.CartItems);
+        _dbContext.CartItems.RemoveRange(cartItemsToClear);
+        cart.CartItems.Clear();
         await _dbContext.SaveChangesAsync();
-        _logger.LogInformation($"All CartItems cleared from Cart with Id {cartId} successfully");
+        _logger.LogInformation("CartItems cleared successfully");
     }
 
-    public async Task<List<CartItemGetVm>> GetAllItemsAsync(long cartId)
+    public async Task<List<CartItemModel>> GetAllItemsAsync()
     {
-        var cart = await _dbContext.Carts.FirstOrDefaultAsync(c => c.Id == cartId);
+        var clientId = _clientContextReader.GetClientContextId();
+
+        var cart = await _dbContext.Carts.Include(c => c.CartItems).FirstOrDefaultAsync(c => c.ClientId == clientId);
 
         if (cart == null)
-        {
-            throw new Exception("Cart not found");
-        }
-
-        var client = await _dbContext.Clients.FirstOrDefaultAsync(c => c.Id == cart.ClientId);
-
-        if (client == null)
         {
             throw new Exception("Client not found");
         }
 
-        var checkingClientEmail = _customAuthenticationService.GetClientEmailFromToken();
+        var cartItemsToReturn = await _dbContext.CartItems.Where(ci => ci.CartId == cart.Id).ToListAsync();
+        var cartItemModels = new List<CartItemModel>();
 
-        if (client.Email != checkingClientEmail)
+        foreach (var cartItem in cartItemsToReturn)
         {
-            throw new Exception("Unauthorized: You can get Items only of your own cart");
+            var cartItemModel = _mapper.Map<CartItemModel>(cartItem);
+
+            cartItemModels.Add(cartItemModel);
         }
 
-        var cartItemGetVmList = new List<CartItemGetVm>();
-        var cartItemsDb = await _dbContext.CartItems.Where(ci => ci.CartId == cartId).ToListAsync();
-
-        foreach (var cartItem in cartItemsDb)
-        {
-            var listItemGetVm = _mapper.Map<CartItemGetVm>(cartItem);
-            cartItemGetVmList.Add(listItemGetVm);
-        }
-
-        return cartItemGetVmList;
+        return cartItemModels;
     }
 }
 

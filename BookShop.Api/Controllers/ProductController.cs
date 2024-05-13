@@ -1,5 +1,4 @@
 ﻿using BookShop.Services.Models.ProductModels;
-using BookShop.Data.Entities;
 using BookShop.Services.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,23 +18,23 @@ public class ProductController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<ProductGetVm>> AddProduct(ProductAddVm productAddVm)
+    public async Task<ActionResult<ProductModel>> AddProduct(ProductAddModel productAddModel)
     {
-        var productOutput = await _productService.AddAsync(productAddVm);
+        var productOutput = await _productService.AddAsync(productAddModel);
 
         return Ok(productOutput);
     }
 
     [HttpPut]
-    public async Task<ActionResult<ProductGetVm>> UpdateProduct(ProductUpdateVm productUpdateVm)
+    public async Task<ActionResult<ProductModel>> UpdateProduct(ProductUpdateModel productUpdateModel)
     {
-        var productOutput = await _productService.UpdateAsync(productUpdateVm);
+        var productOutput = await _productService.UpdateAsync(productUpdateModel);
 
         return Ok(productOutput);
     }
 
     [HttpDelete("{id}")]
-    public async Task<ActionResult<ProductEntity>> RemoveProduct(long id)
+    public async Task<IActionResult> RemoveProduct(long id)
     {
         await _productService.RemoveAsync(id);
 
@@ -43,7 +42,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpDelete]
-    public async Task<ActionResult<ProductEntity>> ClearProducts()
+    public async Task<IActionResult> ClearProducts()
     {
         await _productService.ClearAsync();
 
@@ -51,20 +50,20 @@ public class ProductController : ControllerBase
     }
 
     [AllowAnonymous]
-    [HttpGet("{id}")]
-    public async Task<ActionResult<ProductGetVm>> GetProduct(long id)
-    {
-        var productOutput = await _productService.GetByIdAsync(id);
-
-        return Ok(productOutput);
-    }
-
-    [AllowAnonymous]
     [HttpGet]
-    public async Task<ActionResult<List<ProductGetVm>>> GetAllProducts()
+    public async Task<ActionResult<List<ProductModel>>> GetAllProducts()
     {
         var productsOutput = await _productService.GetAllAsync();
 
         return Ok(productsOutput);
+    }
+
+    [AllowAnonymous]
+    [HttpGet("{id}")]
+    public async Task<ActionResult<ProductModel>> GetProduct(long id)
+    {
+        var productOutput = await _productService.GetByIdAsync(id);
+
+        return Ok(productOutput);
     }
 }

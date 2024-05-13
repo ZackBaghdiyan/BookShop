@@ -4,7 +4,7 @@ namespace BookShop.Services.Abstractions;
 
 public interface IPaymentMethodService
 {
-    Task<PaymentMethodGetVm> AddAsync(PaymentMethodAddVm paymentMethodEntity);
+    Task<PaymentMethodModel> AddAsync(PaymentMethodAddModel paymentMethodEntity);
     Task RemoveAsync(long paymentMethodId);
-    Task<List<PaymentMethodGetVm>> GetAllAsync(long clientId);
+    Task<List<PaymentMethodModel>> GetAllAsync();
 }

@@ -4,7 +4,5 @@ namespace BookShop.Services.Abstractions;
 
 public interface ICustomAuthenticationService
 {
-    string GenerateToken(string clientEmail);
-    Task<ClientTokenVm?> AuthenticateAsync(string email, string password);
-    string GetClientEmailFromToken();
+    string GenerateToken(ClientModel client);
 }

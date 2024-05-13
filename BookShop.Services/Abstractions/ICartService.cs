@@ -4,6 +4,6 @@ namespace BookShop.Services.Abstractions;
 
 public interface ICartService
 {
-    Task<List<CartItemGetVm>> GetAllItemsAsync(long cartId);
-    Task ClearAllItemsAsync(long cartId);
+    Task<List<CartItemModel>> GetAllItemsAsync();
+    Task ClearAllItemsAsync();
 }
