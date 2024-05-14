@@ -2,9 +2,11 @@
 using BookShop.Services.Models.TokenModels;
 using BookShop.Services.Abstractions;
 using Microsoft.AspNetCore.Mvc;
+using BookShop.Api.Attributes;
 
 namespace BookShop.Api.Controllers;
 
+[ExcludeFromClientContextMiddleware]
 [ApiController]
 [Route("[controller]")]
 public class AuthenticationController : ControllerBase

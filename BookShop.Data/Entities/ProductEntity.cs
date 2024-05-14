@@ -10,7 +10,7 @@ public class ProductEntity : IIdentifiable
     public string Manufacturer { get; set; } = null!;
     public string Details { get; set; } = null!;
     public int Count { get; set; }
-    public CartItemEntity? CartItemEntity { get; set; }
+    public List<CartItemEntity> CartItemEntity { get; set; } = new();
     public List<OrderEntity> Orders { get; set; } = new();
-    public WishListItemEntity? WishListItemEntity { get; set; }
+    public List<WishListItemEntity> WishListItemEntity { get; set; } = new();
 }

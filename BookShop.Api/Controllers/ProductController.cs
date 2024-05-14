@@ -2,6 +2,7 @@
 using BookShop.Services.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using BookShop.Api.Attributes;
 
 namespace BookShop.Api.Controllers;
 
@@ -33,10 +34,10 @@ public class ProductController : ControllerBase
         return Ok(productOutput);
     }
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> RemoveProduct(long id)
+    [HttpDelete("{productId}")]
+    public async Task<IActionResult> RemoveProduct(long productId)
     {
-        await _productService.RemoveAsync(id);
+        await _productService.RemoveAsync(productId);
 
         return Ok();
     }
@@ -49,6 +50,7 @@ public class ProductController : ControllerBase
         return Ok();
     }
 
+    [ExcludeFromClientContextMiddleware]
     [AllowAnonymous]
     [HttpGet]
     public async Task<ActionResult<List<ProductModel>>> GetAllProducts()
@@ -58,11 +60,12 @@ public class ProductController : ControllerBase
         return Ok(productsOutput);
     }
 
+    [ExcludeFromClientContextMiddleware]
     [AllowAnonymous]
-    [HttpGet("{id}")]
-    public async Task<ActionResult<ProductModel>> GetProduct(long id)
+    [HttpGet("{productId}")]
+    public async Task<ActionResult<ProductModel>> GetProduct(long productId)
     {
-        var productOutput = await _productService.GetByIdAsync(id);
+        var productOutput = await _productService.GetByIdAsync(productId);
 
         return Ok(productOutput);
     }

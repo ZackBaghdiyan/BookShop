@@ -10,7 +10,7 @@ public class CartConfiguration : IEntityTypeConfiguration<CartEntity>
     {
         builder.HasKey(c => c.Id);
 
-        builder.HasOne(c => c.Client)
+        builder.HasOne(c => c.ClientEntity)
                .WithOne(cl => cl.CartEntity)
                .HasForeignKey<CartEntity>(c => c.ClientId);
     }

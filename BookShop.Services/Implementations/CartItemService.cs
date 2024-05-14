@@ -32,20 +32,13 @@ internal class CartItemService : ICartItemService
         var cart = await _dbContext.Carts.Include(c => c.CartItems).FirstOrDefaultAsync(c => c.ClientId == clientId);
         var product = await _dbContext.Products.FirstOrDefaultAsync(p => p.Id == cartItemAddModel.ProductId);
 
-        if (cart == null)
+        if (product.Count < cartItemAddModel.Count)
         {
-            throw new Exception("Cart not found");
-        }
-        else if (product == null)
-        {
-            throw new Exception("Product not found");
-        }
-        else if (product.Count < cartItemAddModel.Count)
-        {
-            cartItemAddModel.Count = product.Count;
+            throw new Exception("Not enough product");
         }
 
-        var cartItemCheck = _dbContext.CartItems.FirstOrDefault(ci => ci.ProductId == cartItemAddModel.ProductId);
+        var cartItemCheck = await _dbContext.CartItems.FirstOrDefaultAsync(ci => ci.ProductId == cartItemAddModel.ProductId 
+                                                                              && ci.CartId == cart.Id);
 
         var cartItemModel = new CartItemModel();
 
@@ -99,17 +92,9 @@ internal class CartItemService : ICartItemService
         var cart = await _dbContext.Carts.Include(c => c.CartItems).FirstOrDefaultAsync(c => c.ClientId == clientId);
         var product = await _dbContext.Products.FirstOrDefaultAsync(p => p.Id == cartItemUpdateModel.ProductId);
 
-        if (cart == null)
+        if (product.Count < cartItemUpdateModel.Count)
         {
-            throw new Exception("Cart not found");
-        }
-        else if (product == null)
-        {
-            throw new Exception("Product not found");
-        }
-        else if (product.Count < cartItemUpdateModel.Count)
-        {
-            cartItemUpdateModel.Count = product.Count;
+            throw new Exception("Not enough product");
         }
 
         var cartItemToUpdate = await _dbContext.CartItems.FirstOrDefaultAsync(ci => ci.Id == cartItemUpdateModel.Id

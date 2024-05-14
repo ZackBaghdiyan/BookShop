@@ -27,16 +27,9 @@ internal class CartService : ICartService
     {
         var clientId = _clientContextReader.GetClientContextId();
 
-        var cart = await _dbContext.Carts.Include(c => c.Client).FirstOrDefaultAsync(c => c.ClientId == clientId);
+        var cart = await _dbContext.Carts.Include(c => c.ClientEntity).FirstOrDefaultAsync(c => c.ClientId == clientId);
 
-        if (cart == null)
-        {
-            throw new Exception("Cart not found");
-        }
-
-        var cartItemsToClear = await _dbContext.CartItems.Where(ci => ci.CartId == cart.Id).ToListAsync();
-
-        _dbContext.CartItems.RemoveRange(cartItemsToClear);
+        _dbContext.CartItems.RemoveRange(cart.CartItems);
         cart.CartItems.Clear();
         await _dbContext.SaveChangesAsync();
         _logger.LogInformation("CartItems cleared successfully");
@@ -48,15 +41,9 @@ internal class CartService : ICartService
 
         var cart = await _dbContext.Carts.Include(c => c.CartItems).FirstOrDefaultAsync(c => c.ClientId == clientId);
 
-        if (cart == null)
-        {
-            throw new Exception("Client not found");
-        }
-
-        var cartItemsToReturn = await _dbContext.CartItems.Where(ci => ci.CartId == cart.Id).ToListAsync();
         var cartItemModels = new List<CartItemModel>();
 
-        foreach (var cartItem in cartItemsToReturn)
+        foreach (var cartItem in cart.CartItems)
         {
             var cartItemModel = _mapper.Map<CartItemModel>(cartItem);
 

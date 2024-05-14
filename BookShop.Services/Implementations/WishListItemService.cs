@@ -31,15 +31,12 @@ internal class WishListItemService : IWishListItemService
 
         var wishList = await _dbContext.WishLists.Include(w => w.WishListItems).FirstOrDefaultAsync(w => w.ClientId == clientId);
 
-        if (wishList == null)
-        {
-            throw new Exception("WishList not found");
-        }
-
         var wishListItem = _mapper.Map<WishListItemEntity>(wishListItemAddModel);
+
         wishListItem.WishListId = wishList.Id;
 
         _dbContext.WishListItems.Add(wishListItem);
+        wishList.WishListItems.Add(wishListItem);
         await _dbContext.SaveChangesAsync();
         _logger.LogInformation($"WishListItem with Id {wishListItem.Id} added successfully");
 
@@ -53,11 +50,6 @@ internal class WishListItemService : IWishListItemService
         var clientId = _clientContextReader.GetClientContextId();
 
         var wishList = await _dbContext.WishLists.Include(w => w.WishListItems).FirstOrDefaultAsync(w => w.ClientId == clientId);
-
-        if (wishList == null)
-        {
-            throw new Exception("WishList not found");
-        }
 
         var wishListItemToRemove = wishList.WishListItems.FirstOrDefault(wi => wi.Id == wishListItemId);
 

@@ -2,6 +2,7 @@
 using BookShop.Services.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using BookShop.Api.Attributes;
 
 namespace BookShop.Api.Controllers;
 
@@ -33,6 +34,7 @@ public class ClientController : ControllerBase
         return Ok(clientOutput);
     }
 
+    [ExcludeFromClientContextMiddleware]
     [HttpPost("register")]
     [AllowAnonymous]
     public async Task<ActionResult<ClientModel>> RegisterClient(ClientRegisterModel clientRegisterModel)

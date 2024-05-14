@@ -3,6 +3,7 @@ using System;
 using BookShop.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BookShop.Data.Migrations
 {
     [DbContext(typeof(BookShopDbContext))]
-    partial class BookShopDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240514155856_AddedNew")]
+    partial class AddedNew
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -305,13 +308,13 @@ namespace BookShop.Data.Migrations
 
             modelBuilder.Entity("BookShop.Data.Entities.CartEntity", b =>
                 {
-                    b.HasOne("BookShop.Data.Entities.ClientEntity", "ClientEntity")
+                    b.HasOne("BookShop.Data.Entities.ClientEntity", "Client")
                         .WithOne("CartEntity")
                         .HasForeignKey("BookShop.Data.Entities.CartEntity", "ClientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("ClientEntity");
+                    b.Navigation("Client");
                 });
 
             modelBuilder.Entity("BookShop.Data.Entities.CartItemEntity", b =>

@@ -24,40 +24,15 @@ internal class WishListService : IWishListService
         _clientContextReader = clientContextReader;
     }
 
-    public async Task ClearAllItemsAsync()
-    {
-        var clientId = _clientContextReader.GetClientContextId();
-
-        var wishList = await _dbContext.WishLists.Include(w => w.ClientEntity).FirstOrDefaultAsync(w => w.ClientId == clientId);
-
-        if (wishList == null)
-        {
-            throw new Exception("WishList not found");
-        }
-
-        var wishListItemsToClear = await _dbContext.WishListItems.Where(wi => wi.WishListId == wishList.Id).ToListAsync();
-
-        _dbContext.WishListItems.RemoveRange(wishListItemsToClear);
-        wishList.WishListItems.Clear();
-        await _dbContext.SaveChangesAsync();
-        _logger.LogInformation("WishListItems cleared successfully");
-    }
-
     public async Task<List<WishListItemModel>> GetAllItemsAsync()
     {
         var clientId = _clientContextReader.GetClientContextId();
 
         var wishList = await _dbContext.WishLists.Include(w => w.WishListItems).FirstOrDefaultAsync(w => w.ClientId == clientId);
 
-        if (wishList == null)
-        {
-            throw new Exception("WishList not found");
-        }
-
-        var wishListItemsToReturn = await _dbContext.WishListItems.Where(wi => wi.WishListId == wishList.Id).ToListAsync();
         var wishListItemModels = new List<WishListItemModel>();
 
-        foreach (var wishListItem in wishListItemsToReturn)
+        foreach (var wishListItem in wishList.WishListItems)
         {
             var wishListItemModel = _mapper.Map<WishListItemModel>(wishListItem);
 
@@ -65,5 +40,17 @@ internal class WishListService : IWishListService
         }
 
         return wishListItemModels;
+    }
+
+    public async Task ClearAllItemsAsync()
+    {
+        var clientId = _clientContextReader.GetClientContextId();
+
+        var wishList = await _dbContext.WishLists.Include(w => w.ClientEntity).FirstOrDefaultAsync(w => w.ClientId == clientId);
+
+        _dbContext.WishListItems.RemoveRange(wishList.WishListItems);
+        wishList.WishListItems.Clear();
+        await _dbContext.SaveChangesAsync();
+        _logger.LogInformation("WishListItems cleared successfully");
     }
 }
