@@ -2,7 +2,6 @@
 using BookShop.Services.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using BookShop.Api.Attributes;
 
 namespace BookShop.Api.Controllers;
 
@@ -50,7 +49,6 @@ public class ProductController : ControllerBase
         return Ok();
     }
 
-    [ExcludeFromClientContextMiddleware]
     [AllowAnonymous]
     [HttpGet]
     public async Task<ActionResult<List<ProductModel>>> GetAllProducts()
@@ -60,7 +58,6 @@ public class ProductController : ControllerBase
         return Ok(productsOutput);
     }
 
-    [ExcludeFromClientContextMiddleware]
     [AllowAnonymous]
     [HttpGet("{productId}")]
     public async Task<ActionResult<ProductModel>> GetProduct(long productId)

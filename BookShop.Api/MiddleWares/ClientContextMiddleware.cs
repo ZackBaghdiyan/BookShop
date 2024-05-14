@@ -1,5 +1,4 @@
-﻿using BookShop.Api.Attributes;
-using BookShop.Common.ClientService;
+﻿using BookShop.Common.ClientService;
 using BookShop.Common.Consts;
 using System.IdentityModel.Tokens.Jwt;
 
@@ -16,38 +15,34 @@ public class ClientContextMiddleware : IMiddleware
 
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
-        var excludeClientContext = context.GetEndpoint()?.Metadata.GetMetadata<ExcludeFromClientContextMiddleware>() != null;
+        var isAuthenticated = context.User.Identity?.IsAuthenticated;
 
-        if (!excludeClientContext)
+        if (isAuthenticated == true)
         {
             var tokenHeader = context.Request.Headers["Authorization"].ToString();
 
-            if (context.Request.Path == "/Client/register" || context.Request.Path == "/Authentication/login") { }
-            else if (string.IsNullOrEmpty(tokenHeader))
+            if (string.IsNullOrEmpty(tokenHeader))
             {
                 throw new Exception("Token is missing");
             }
-            else
+            var token = tokenHeader.Replace("Bearer ", string.Empty);
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var securityToken = tokenHandler.ReadJwtToken(token);
+
+            var clientIdClaim = securityToken.Claims.FirstOrDefault(c => c.Type == BookShopClaims.Id);
+
+            if (clientIdClaim == null)
             {
-                var token = tokenHeader.Replace("Bearer ", string.Empty);
-
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var securityToken = tokenHandler.ReadJwtToken(token);
-
-                var clientIdClaim = securityToken.Claims.FirstOrDefault(c => c.Type == BookShopClaims.Id);
-
-                if (clientIdClaim == null)
-                {
-                    throw new Exception("clientId is missing");
-                }
-
-                if (!long.TryParse(clientIdClaim.Value, out long clientId))
-                {
-                    throw new Exception("Unknown clientId");
-                }
-
-                _clientContextAccessor.SetClientContextId(clientId);
+                throw new Exception("clientId is missing");
             }
+
+            if (!long.TryParse(clientIdClaim.Value, out long clientId))
+            {
+                throw new Exception("Unknown clientId");
+            }
+
+            _clientContextAccessor.SetClientContextId(clientId);
         }
 
         await next(context);

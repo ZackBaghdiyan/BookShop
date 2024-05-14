@@ -2,11 +2,10 @@
 using BookShop.Services.Models.TokenModels;
 using BookShop.Services.Abstractions;
 using Microsoft.AspNetCore.Mvc;
-using BookShop.Api.Attributes;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BookShop.Api.Controllers;
 
-[ExcludeFromClientContextMiddleware]
 [ApiController]
 [Route("[controller]")]
 public class AuthenticationController : ControllerBase
@@ -22,6 +21,7 @@ public class AuthenticationController : ControllerBase
 
     [HttpPost]
     [Route("login")]
+    [AllowAnonymous]
     public async Task<ActionResult<TokenLoginModel>> Login(ClientLoginModel clientLoginModel)
     {
         var clientEntity = await _clientService.GetByEmailAndPasswordAsync(clientLoginModel.Email, clientLoginModel.Password);
