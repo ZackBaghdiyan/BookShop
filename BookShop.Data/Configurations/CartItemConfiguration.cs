@@ -11,11 +11,13 @@ public class CartItemConfiguration : IEntityTypeConfiguration<CartItemEntity>
         builder.HasKey(ci => ci.Id);
 
         builder.HasOne(ci => ci.ProductEntity)
-               .WithOne(p => p.CartItemEntity)
-               .HasForeignKey<CartItemEntity>(ci => ci.ProductId);
+               .WithMany(p => p.CartItemEntity)
+               .HasForeignKey(ci => ci.ProductId);
 
         builder.HasOne(ci => ci.CartEntity)
                .WithMany(c => c.CartItems)
                .HasForeignKey(ci => ci.CartId);
+
+        builder.HasIndex(ci => new { ci.ProductId, ci.CartId }).IsUnique();
     }
 }

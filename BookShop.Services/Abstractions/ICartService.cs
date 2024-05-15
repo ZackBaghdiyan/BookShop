@@ -1,10 +1,9 @@
-﻿using BookShop.Data.Entities;
+﻿using BookShop.Services.Models.CartItemModels;
 
 namespace BookShop.Services.Abstractions;
 
 public interface ICartService
 {
-    Task CreateAsync(long clientId);
-    Task<List<CartItemEntity>> GetAllItemsAsync(long cartId);
-    Task ClearAllItemsAsync(long cartId);
+    Task<List<CartItemModel>> GetAllItemsAsync();
+    Task ClearAllItemsAsync();
 }

@@ -65,7 +65,7 @@ namespace BookShop.Data.Migrations
 
                     b.HasIndex("CartId");
 
-                    b.HasIndex("ProductId")
+                    b.HasIndex("ProductId", "CartId")
                         .IsUnique();
 
                     b.ToTable("CartItems");
@@ -295,23 +295,23 @@ namespace BookShop.Data.Migrations
 
                     b.HasIndex("ClientEntityId");
 
-                    b.HasIndex("ProductId")
-                        .IsUnique();
-
                     b.HasIndex("WishListId");
+
+                    b.HasIndex("ProductId", "WishListId")
+                        .IsUnique();
 
                     b.ToTable("WishListItems");
                 });
 
             modelBuilder.Entity("BookShop.Data.Entities.CartEntity", b =>
                 {
-                    b.HasOne("BookShop.Data.Entities.ClientEntity", "Client")
+                    b.HasOne("BookShop.Data.Entities.ClientEntity", "ClientEntity")
                         .WithOne("CartEntity")
                         .HasForeignKey("BookShop.Data.Entities.CartEntity", "ClientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Client");
+                    b.Navigation("ClientEntity");
                 });
 
             modelBuilder.Entity("BookShop.Data.Entities.CartItemEntity", b =>
@@ -323,8 +323,8 @@ namespace BookShop.Data.Migrations
                         .IsRequired();
 
                     b.HasOne("BookShop.Data.Entities.ProductEntity", "ProductEntity")
-                        .WithOne("CartItemEntity")
-                        .HasForeignKey("BookShop.Data.Entities.CartItemEntity", "ProductId")
+                        .WithMany("CartItemEntity")
+                        .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -419,8 +419,8 @@ namespace BookShop.Data.Migrations
                         .HasForeignKey("ClientEntityId");
 
                     b.HasOne("BookShop.Data.Entities.ProductEntity", "ProductEntity")
-                        .WithOne("WishListItemEntity")
-                        .HasForeignKey("BookShop.Data.Entities.WishListItemEntity", "ProductId")
+                        .WithMany("WishListItemEntity")
+                        .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -476,8 +476,7 @@ namespace BookShop.Data.Migrations
 
                     b.Navigation("Orders");
 
-                    b.Navigation("WishListItemEntity")
-                        .IsRequired();
+                    b.Navigation("WishListItemEntity");
                 });
 
             modelBuilder.Entity("BookShop.Data.Entities.WishListEntity", b =>

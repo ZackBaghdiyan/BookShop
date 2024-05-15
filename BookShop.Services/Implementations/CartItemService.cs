@@ -1,6 +1,9 @@
-﻿using BookShop.Data;
+﻿using AutoMapper;
+using BookShop.Common.ClientService.Abstractions;
+using BookShop.Data;
 using BookShop.Data.Entities;
 using BookShop.Services.Abstractions;
+using BookShop.Services.Models.CartItemModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -10,156 +13,112 @@ internal class CartItemService : ICartItemService
 {
     private readonly BookShopDbContext _dbContext;
     private readonly ILogger<CartItemService> _logger;
-    private readonly ICustomAuthenticationService _customAuthenticationService;
+    private readonly IMapper _mapper;
+    private readonly IClientContextReader _clientContextReader;
 
     public CartItemService(BookShopDbContext dbContext, ILogger<CartItemService> logger,
-        ICustomAuthenticationService customAuthenticationService)
+        IMapper mapper, IClientContextReader clientContextReader)
     {
         _dbContext = dbContext;
         _logger = logger;
-        _customAuthenticationService = customAuthenticationService;
+        _mapper = mapper;
+        _clientContextReader = clientContextReader;
     }
 
-    public async Task AddAsync(CartItemEntity cartItem)
+    public async Task<CartItemModel> AddAsync(CartItemAddModel cartItemAddModel)
     {
-        try
+        var clientId = _clientContextReader.GetClientContextId();
+
+        var cart = await _dbContext.Carts.Include(c => c.CartItems).FirstOrDefaultAsync(c => c.ClientId == clientId);
+        var product = await _dbContext.Products.FirstOrDefaultAsync(p => p.Id == cartItemAddModel.ProductId);
+
+        if (product.Count < cartItemAddModel.Count)
         {
-            if (cartItem == null)
-            {
-                throw new Exception("There is nothing to add");
-            }
+            throw new Exception("Not enough product");
+        }
 
-            var cart = await _dbContext.Carts.FirstOrDefaultAsync(c => c.Id == cartItem.CartId);
+        var cartItemCheck = await _dbContext.CartItems.FirstOrDefaultAsync(ci => ci.ProductId == cartItemAddModel.ProductId 
+                                                                              && ci.CartId == cart.Id);
 
-            if (cart == null)
-            {
-                throw new Exception("Cart not found");
-            }
+        var cartItemModel = new CartItemModel();
 
-            var client = await _dbContext.Clients.FirstOrDefaultAsync(c => c.Id == cart.ClientId);
-
-            if (client == null)
-            {
-                throw new Exception("Client not Found");
-            }
-
-            var checkingClientEmail = _customAuthenticationService.GetClientEmailFromToken();
-
-            if (client.Email != checkingClientEmail)
-            {
-                throw new Exception("Unauthorized: You can add Items only in your own Cart");
-            }
-
-            if (cart.CartItems == null)
-            {
-                cart.CartItems = new List<CartItemEntity>();
-            }
-
-            cartItem.Price = cartItem.Price * cartItem.Count;
-            _dbContext.CartItems.Add(cartItem);
+        if (cartItemCheck != null)
+        {
+            cartItemCheck.Count += cartItemAddModel.Count;
+            cartItemCheck.Price = cartItemCheck.Count * product.Price;
             await _dbContext.SaveChangesAsync();
-            _logger.LogInformation($"CartItem with Id {cartItem.Id} added to Cart with Id {cart.Id} successfully");
+
+            cartItemModel = _mapper.Map<CartItemModel>(cartItemCheck);
+
+            return cartItemModel;
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"Error: {ex.Message}");
-            throw;
-        }
+
+        var cartItem = _mapper.Map<CartItemEntity>(cartItemAddModel);
+
+        cartItem.Price = cartItem.Count * product.Price;
+        cartItem.CartId = cart.Id;
+
+        _dbContext.CartItems.Add(cartItem);
+        await _dbContext.SaveChangesAsync();
+        _logger.LogInformation($"CartItem with Id {cartItem.Id} added successfully");
+
+        cartItemModel = _mapper.Map<CartItemModel>(cartItem);
+
+        return cartItemModel;
     }
 
-    public async Task RemoveAsync(CartItemEntity cartItem)
+    public async Task RemoveAsync(long cartItemId)
     {
-        try
+        var clientId = _clientContextReader.GetClientContextId();
+
+        var cart = await _dbContext.Carts.Include(c => c.CartItems).FirstOrDefaultAsync(c => c.ClientId == clientId);
+
+        if (cart == null)
         {
-            if (cartItem == null)
-            {
-                throw new Exception("There is nothing to remove");
-            }
-
-            var cart = await _dbContext.Carts.FirstOrDefaultAsync(c => c.Id == cartItem.CartId);
-
-            if (cart == null)
-            {
-                throw new Exception("Cart not found");
-            }
-
-            var client = await _dbContext.Clients.FirstOrDefaultAsync(c => c.Id == cart.ClientId);
-
-            if (client == null)
-            {
-                throw new Exception("Client not found");
-            }
-
-            var checkingClientEmail = _customAuthenticationService.GetClientEmailFromToken();
-
-            if (client.Email != checkingClientEmail)
-            {
-                throw new Exception("Unauthorized: You can remove Items only from your own Cart");
-            }
-
-            if (cart.CartItems == null)
-            {
-                throw new Exception("Cart is already empty");
-            }
-
-            _dbContext.CartItems.Remove(cartItem);
-            await _dbContext.SaveChangesAsync();
-            _logger.LogInformation($"CartItem with Id {cartItem.Id} removed from Cart with Id {cart.Id} successfully");
+            throw new Exception("Cart not found");
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"Error: {ex.Message}");
-            throw;
-        }
+
+        var cartItemToRemove = cart.CartItems.FirstOrDefault(ci => ci.Id == cartItemId);
+
+        _dbContext.CartItems.Remove(cartItemToRemove);
+        await _dbContext.SaveChangesAsync();
+        _logger.LogInformation($"CartItem with Id {cartItemId} removed successfully");
     }
 
-    public async Task UpdateAsync(CartItemEntity cartItem)
+    public async Task<CartItemModel> UpdateAsync(CartItemUpdateModel cartItemUpdateModel)
     {
-        try
+        var clientId = _clientContextReader.GetClientContextId();
+
+        var cart = await _dbContext.Carts.Include(c => c.CartItems).FirstOrDefaultAsync(c => c.ClientId == clientId);
+        var product = await _dbContext.Products.FirstOrDefaultAsync(p => p.Id == cartItemUpdateModel.ProductId);
+
+        if (product.Count < cartItemUpdateModel.Count)
         {
-            if (cartItem == null)
-            {
-                throw new Exception("There is nothing to remove");
-            }
-
-            var cart = await _dbContext.Carts.FirstOrDefaultAsync(c => c.Id == cartItem.CartId);
-
-            if (cart == null)
-            {
-                throw new Exception("Cart not found");
-            }
-
-            var client = await _dbContext.Clients.FirstOrDefaultAsync(c => c.Id == cart.ClientId);
-
-            if (client == null)
-            {
-                throw new Exception("Client not found");
-            }
-
-            var checkingClientEmail = _customAuthenticationService.GetClientEmailFromToken();
-
-            if (client.Email != checkingClientEmail)
-            {
-                throw new Exception("Unauthorized: You can update Items only from your own Cart");
-            }
-
-            var cartItemToUpdate = await _dbContext.CartItems.FirstOrDefaultAsync(c => c.Id == cartItem.Id);
-
-            if (cartItemToUpdate == null)
-            {
-                throw new Exception("CartItem not found");
-            }
-
-            cartItemToUpdate.Count = cartItem.Count;
-            cartItemToUpdate.Price = cartItem.Count * cartItem.Price;
-
-            await _dbContext.SaveChangesAsync();
-            _logger.LogInformation($"CartItem with Id {cartItem.Id} removed from Cart with Id {cart.Id} successfully");
+            throw new Exception("Not enough product");
         }
-        catch (Exception ex)
+
+        var cartItemToUpdate = await _dbContext.CartItems.FirstOrDefaultAsync(ci => ci.Id == cartItemUpdateModel.Id
+        && ci.CartEntity.ClientId == clientId);
+
+        if (cartItemToUpdate == null)
         {
-            _logger.LogError(ex, $"Error: {ex.Message}");
-            throw;
+            throw new Exception("CartItem not found");
         }
+
+        cartItemToUpdate = _mapper.Map<CartItemEntity>(cartItemUpdateModel);
+
+        cartItemToUpdate.Count = cartItemUpdateModel.Count;
+        cartItemToUpdate.Price = cartItemUpdateModel.Count * product.Price;
+
+        _logger.LogInformation($"CartItem with Id {cartItemToUpdate.Id} updated successfully");
+
+        var cartItemToDelete = cart.CartItems.FirstOrDefault(ci => ci.ProductId == cartItemToUpdate.ProductId);
+        cart.CartItems.Remove(cartItemToDelete);
+        cart.CartItems.Add(cartItemToUpdate);
+        await _dbContext.SaveChangesAsync();
+
+        var cartItemModel = _mapper.Map<CartItemModel>(cartItemToUpdate);
+
+        return cartItemModel;
     }
 }

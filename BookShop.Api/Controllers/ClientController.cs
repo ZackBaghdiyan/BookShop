@@ -1,51 +1,44 @@
-﻿using AutoMapper;
-using BookShop.Api.Models.ClientModels;
-using BookShop.Data.Entities;
+﻿using BookShop.Services.Models.ClientModels;
 using BookShop.Services.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BookShop.Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("[controller]")]
 public class ClientController : ControllerBase
 {
-    private readonly IClientService _service;
-    private readonly IMapper _mapper;
+    private readonly IClientService _clientService;
 
-    public ClientController(IClientService service, IMapper mapper)
+    public ClientController(IClientService clientService)
     {
-        _service = service;
-        _mapper = mapper;
+        _clientService = clientService;
     }
 
-    [Authorize]
     [HttpDelete]
-    public async Task<ActionResult<ClientEntity>> RemoveClient(ClientDeleteModel clientInput)
+    public async Task<IActionResult> RemoveClient()
     {
-        var clientToRemove = _mapper.Map<ClientEntity>(clientInput);
-        await _service.RemoveAsync(clientToRemove);
+        await _clientService.RemoveAsync();
 
         return Ok();
     }
 
-    [Authorize]
     [HttpPut]
-    public async Task<ActionResult<ClientEntity>> UpdateClient(ClientPutModel clientInput)
+    public async Task<ActionResult<ClientModel>> UpdateClient(ClientUpdateModel clientInput)
     {
-        var client = _mapper.Map<ClientEntity>(clientInput);
-        await _service.UpdateAsync(client);
+        var clientOutput = await _clientService.UpdateAsync(clientInput);
 
-        return Ok();
+        return Ok(clientOutput);
     }
 
-    [HttpPost]
-    public async Task<ActionResult<ClientEntity>> RegisterClient(ClientPostModel clientInput)
+    [HttpPost("register")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ClientModel>> RegisterClient(ClientRegisterModel clientRegisterModel)
     {
-        var client = _mapper.Map<ClientEntity>(clientInput);
-        await _service.RegisterAsync(client);
+        var client = await _clientService.RegisterAsync(clientRegisterModel);
 
-        return Ok();
+        return Ok(client);
     }
 }

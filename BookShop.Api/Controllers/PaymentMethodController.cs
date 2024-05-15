@@ -1,6 +1,4 @@
-﻿using AutoMapper;
-using BookShop.Api.Models.PaymentMethodModels;
-using BookShop.Data.Entities;
+﻿using BookShop.Services.Models.PaymentMethodModels;
 using BookShop.Services.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,45 +11,33 @@ namespace BookShop.Api.Controllers;
 public class PaymentMethodController : ControllerBase
 {
     private readonly IPaymentMethodService _service;
-    private readonly IMapper _mapper;
 
-    public PaymentMethodController(IPaymentMethodService service, IMapper mapper)
+    public PaymentMethodController(IPaymentMethodService service)
     {
         _service = service;
-        _mapper = mapper;
     }
 
     [HttpPost]
-    public async Task<ActionResult<PaymentMethodEntity>> AddPaymentMethod(PaymentMethodPostModel paymentMethod)
+    public async Task<ActionResult<PaymentMethodModel>> AddPaymentMethod(PaymentMethodAddModel paymentMethodAddModel)
     {
-        var paymentMethodToAdd = _mapper.Map<PaymentMethodEntity>(paymentMethod);
-        await _service.AddAsync(paymentMethodToAdd);
+        var paymentMethodOutput = await _service.AddAsync(paymentMethodAddModel);
 
-        return Ok();
+        return Ok(paymentMethodOutput);
     }
-    
+
     [HttpDelete]
-    public async Task<ActionResult<PaymentMethodEntity>> RemovePaymentMethod(PaymentMethodDeleteModel paymentMethodInput)
+    public async Task<IActionResult> RemovePaymentMethod(long paymentMethodId)
     {
-        var paymentMethod = _mapper.Map<PaymentMethodEntity>(paymentMethodInput);
-        await _service.RemoveAsync(paymentMethod);
+        await _service.RemoveAsync(paymentMethodId);
 
         return Ok();
     }
-    
-    [HttpGet]
-    public async Task<ActionResult<List<PaymentMethodGetModel>>> GetAllPaymentMethods(long clientId)
-    {
-        var paymentMethods = await _service.GetAllAsync(clientId);
-        var paymentMethodsOutput = new List<PaymentMethodGetModel>();
 
-        foreach (var paymentMethod in paymentMethods)
-        {
-            var paymentMethodOutput = _mapper.Map<PaymentMethodGetModel>(paymentMethod);
-            paymentMethodsOutput.Add(paymentMethodOutput);
-        }
+    [HttpGet]
+    public async Task<ActionResult<List<PaymentMethodModel>>> GetAllPaymentMethods()
+    {
+        var paymentMethodsOutput = await _service.GetAllAsync();
 
         return Ok(paymentMethodsOutput);
     }
-
 }

@@ -1,13 +1,13 @@
-﻿using BookShop.Data.Entities;
+﻿using BookShop.Services.Models.ProductModels;
 
 namespace BookShop.Services.Abstractions;
 
 public interface IProductService
 {
-    Task AddAsync(ProductEntity productEntity);
+    Task<ProductModel> AddAsync(ProductAddModel productEntity);
     Task RemoveAsync(long productId);
-    Task<List<ProductEntity>> GetAllAsync();
-    Task UpdateAsync(ProductEntity productEntity);
-    Task<ProductEntity> GetByIdAsync(long productId);
+    Task<List<ProductModel>> GetAllAsync();
+    Task<ProductModel> GetByIdAsync(long productId);
+    Task<ProductModel> UpdateAsync(ProductUpdateModel productEntity);
     Task ClearAsync();
 }
