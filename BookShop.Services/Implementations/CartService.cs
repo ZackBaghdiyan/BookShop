@@ -27,12 +27,11 @@ internal class CartService : ICartService
     {
         var clientId = _clientContextReader.GetClientContextId();
 
-        var cart = await _dbContext.Carts.Include(c => c.ClientEntity).FirstOrDefaultAsync(c => c.ClientId == clientId);
+        var cart = await _dbContext.Carts.Include(c => c.CartItems).FirstOrDefaultAsync(c => c.ClientId == clientId);
 
         _dbContext.CartItems.RemoveRange(cart.CartItems);
-        cart.CartItems.Clear();
         await _dbContext.SaveChangesAsync();
-        _logger.LogInformation("CartItems cleared successfully");
+        _logger.LogInformation($"CartItems cleared successfully for Client with Id {clientId}");
     }
 
     public async Task<List<CartItemModel>> GetAllItemsAsync()

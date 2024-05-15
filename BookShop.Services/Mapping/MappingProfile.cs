@@ -4,6 +4,7 @@ using BookShop.Services.Models.ClientModels;
 using BookShop.Services.Models.ProductModels;
 using BookShop.Services.Models.WishListItemModels;
 using BookShop.Data.Entities;
+using BookShop.Services.Models.OrderModels;
 
 namespace BookShop.Services.Mapping;
 
@@ -26,5 +27,8 @@ public class MappingProfile : Profile
 
         CreateMap<WishListItemEntity, WishListItemModel>();
         CreateMap<WishListItemAddModel, WishListItemEntity>();
+
+        CreateMap<OrderEntity, OrderModel>();
+        CreateMap<OrderAddModel, OrderEntity>();
     }
 }

@@ -46,11 +46,10 @@ internal class WishListService : IWishListService
     {
         var clientId = _clientContextReader.GetClientContextId();
 
-        var wishList = await _dbContext.WishLists.Include(w => w.ClientEntity).FirstOrDefaultAsync(w => w.ClientId == clientId);
+        var wishList = await _dbContext.WishLists.Include(w => w.WishListItems).FirstOrDefaultAsync(w => w.ClientId == clientId);
 
         _dbContext.WishListItems.RemoveRange(wishList.WishListItems);
-        wishList.WishListItems.Clear();
         await _dbContext.SaveChangesAsync();
-        _logger.LogInformation("WishListItems cleared successfully");
+        _logger.LogInformation($"WishListItems cleared successfully for Client with Id {clientId}");
     }
 }

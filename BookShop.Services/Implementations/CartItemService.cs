@@ -27,6 +27,11 @@ internal class CartItemService : ICartItemService
 
     public async Task<CartItemModel> AddAsync(CartItemAddModel cartItemAddModel)
     {
+        if (cartItemAddModel.Count <= 0)
+        {
+            throw new Exception("Product Count can't be less than 0");
+        }
+
         var clientId = _clientContextReader.GetClientContextId();
 
         var cart = await _dbContext.Carts.Include(c => c.CartItems).FirstOrDefaultAsync(c => c.ClientId == clientId);
@@ -37,8 +42,7 @@ internal class CartItemService : ICartItemService
             throw new Exception("Not enough product");
         }
 
-        var cartItemCheck = await _dbContext.CartItems.FirstOrDefaultAsync(ci => ci.ProductId == cartItemAddModel.ProductId 
-                                                                              && ci.CartId == cart.Id);
+        var cartItemCheck = cart.CartItems.FirstOrDefault(ci => ci.ProductId == cartItemAddModel.ProductId && ci.CartId == cart.Id);
 
         var cartItemModel = new CartItemModel();
 
@@ -60,7 +64,7 @@ internal class CartItemService : ICartItemService
 
         _dbContext.CartItems.Add(cartItem);
         await _dbContext.SaveChangesAsync();
-        _logger.LogInformation($"CartItem with Id {cartItem.Id} added successfully");
+        _logger.LogInformation($"CartItem with Id {cartItem.Id} added successfully for Client with Id {clientId}");
 
         cartItemModel = _mapper.Map<CartItemModel>(cartItem);
 
@@ -82,11 +86,16 @@ internal class CartItemService : ICartItemService
 
         _dbContext.CartItems.Remove(cartItemToRemove);
         await _dbContext.SaveChangesAsync();
-        _logger.LogInformation($"CartItem with Id {cartItemId} removed successfully");
+        _logger.LogInformation($"CartItem with Id {cartItemId} removed successfully for Client with Id {clientId}");
     }
 
     public async Task<CartItemModel> UpdateAsync(CartItemUpdateModel cartItemUpdateModel)
     {
+        if(cartItemUpdateModel.Count <= 0)
+        {
+            throw new Exception("Product Count can't be less than 0");
+        }
+
         var clientId = _clientContextReader.GetClientContextId();
 
         var cart = await _dbContext.Carts.Include(c => c.CartItems).FirstOrDefaultAsync(c => c.ClientId == clientId);
@@ -97,25 +106,13 @@ internal class CartItemService : ICartItemService
             throw new Exception("Not enough product");
         }
 
-        var cartItemToUpdate = await _dbContext.CartItems.FirstOrDefaultAsync(ci => ci.Id == cartItemUpdateModel.Id
-        && ci.CartEntity.ClientId == clientId);
-
-        if (cartItemToUpdate == null)
-        {
-            throw new Exception("CartItem not found");
-        }
-
-        cartItemToUpdate = _mapper.Map<CartItemEntity>(cartItemUpdateModel);
+        var cartItemToUpdate = cart.CartItems.FirstOrDefault(ci => ci.Id == cartItemUpdateModel.Id);
 
         cartItemToUpdate.Count = cartItemUpdateModel.Count;
-        cartItemToUpdate.Price = cartItemUpdateModel.Count * product.Price;
+        cartItemToUpdate.Price = cartItemToUpdate.Count * product.Price;
 
-        _logger.LogInformation($"CartItem with Id {cartItemToUpdate.Id} updated successfully");
-
-        var cartItemToDelete = cart.CartItems.FirstOrDefault(ci => ci.ProductId == cartItemToUpdate.ProductId);
-        cart.CartItems.Remove(cartItemToDelete);
-        cart.CartItems.Add(cartItemToUpdate);
         await _dbContext.SaveChangesAsync();
+        _logger.LogInformation($"CartItem with Id {cartItemToUpdate.Id} updated successfully for Client with Id {clientId}");
 
         var cartItemModel = _mapper.Map<CartItemModel>(cartItemToUpdate);
 

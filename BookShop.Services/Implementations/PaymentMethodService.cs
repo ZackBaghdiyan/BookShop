@@ -37,7 +37,7 @@ internal class PaymentMethodService : IPaymentMethodService
 
         _dbContext.PaymentMethods.Add(paymentMethod);
         await _dbContext.SaveChangesAsync();
-        _logger.LogInformation($"PaymentMethod with Id {paymentMethod.Id} added successfully");
+        _logger.LogInformation($"PaymentMethod with Id {paymentMethod.Id} added successfully for Client with Id {clientId}");
 
         var paymentMethodModel = new PaymentMethodModel()
         {
@@ -84,11 +84,6 @@ internal class PaymentMethodService : IPaymentMethodService
 
         _dbContext.PaymentMethods.Remove(paymentMethod);
         await _dbContext.SaveChangesAsync();
-        _logger.LogInformation($"PaymentMethod with Id {paymentMethod.Id} removed successfully");
-    }
-
-    public async Task ChoosePaymentMethodType()
-    {
-
+        _logger.LogInformation($"PaymentMethod with Id {paymentMethod.Id} removed successfully for Client with Id {clientId}");
     }
 }

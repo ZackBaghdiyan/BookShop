@@ -16,7 +16,7 @@ internal class WishListItemService : IWishListItemService
     private readonly IMapper _mapper;
     private readonly IClientContextReader _clientContextReader;
 
-    public WishListItemService(BookShopDbContext dbContext, ILogger<WishListItemService> logger, 
+    public WishListItemService(BookShopDbContext dbContext, ILogger<WishListItemService> logger,
         IMapper mapper, IClientContextReader clientContextReader)
     {
         _dbContext = dbContext;
@@ -32,13 +32,11 @@ internal class WishListItemService : IWishListItemService
         var wishList = await _dbContext.WishLists.Include(w => w.WishListItems).FirstOrDefaultAsync(w => w.ClientId == clientId);
 
         var wishListItem = _mapper.Map<WishListItemEntity>(wishListItemAddModel);
-
         wishListItem.WishListId = wishList.Id;
 
         _dbContext.WishListItems.Add(wishListItem);
-        wishList.WishListItems.Add(wishListItem);
         await _dbContext.SaveChangesAsync();
-        _logger.LogInformation($"WishListItem with Id {wishListItem.Id} added successfully");
+        _logger.LogInformation($"WishListItem with Id {wishListItem.Id} added successfully for Client with Id {clientId}");
 
         var wishListItemModel = _mapper.Map<WishListItemModel>(wishListItem);
 
@@ -55,6 +53,6 @@ internal class WishListItemService : IWishListItemService
 
         _dbContext.WishListItems.Remove(wishListItemToRemove);
         await _dbContext.SaveChangesAsync();
-        _logger.LogInformation($"WishListItem with Id {wishListItemId} removed successfully");
+        _logger.LogInformation($"WishListItem with Id {wishListItemId} removed successfully for Client with Id {clientId}");
     }
 }

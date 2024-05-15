@@ -23,6 +23,11 @@ internal class ProductService : IProductService
 
     public async Task<ProductModel> AddAsync(ProductAddModel productAddModel)
     {
+        if(productAddModel.Count <= 0)
+        {
+            throw new Exception("Product count can't be less than 0");
+        }
+
         var productCheck = await _dbContext.Products.FirstOrDefaultAsync(p => p.Manufacturer == productAddModel.Manufacturer
         && p.Details == p.Details && p.Name == productAddModel.Name && p.Price == productAddModel.Price);
 
@@ -98,6 +103,11 @@ internal class ProductService : IProductService
 
     public async Task<ProductModel> UpdateAsync(ProductUpdateModel productUpdateModel)
     {
+        if (productUpdateModel.Count <= 0)
+        {
+            throw new Exception("Product count can't be less than 0");
+        }
+
         var productToUpdate = await GetByIdAsync(productUpdateModel.Id);
 
         productToUpdate.Name = productUpdateModel.Name;
