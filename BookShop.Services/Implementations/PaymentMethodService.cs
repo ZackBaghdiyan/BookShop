@@ -1,4 +1,4 @@
-﻿using BookShop.Common.ClientService;
+﻿using BookShop.Common.ClientService.Abstractions;
 using BookShop.Data;
 using BookShop.Data.Entities;
 using BookShop.Data.Models;
@@ -14,10 +14,10 @@ internal class PaymentMethodService : IPaymentMethodService
 {
     private readonly BookShopDbContext _dbContext;
     private readonly ILogger<PaymentMethodService> _logger;
-    private readonly ClientContextReader _clientContextReader;
+    private readonly IClientContextReader _clientContextReader;
 
     public PaymentMethodService(BookShopDbContext bookShopDbContext,
-        ILogger<PaymentMethodService> logger, ClientContextReader clientContextReader)
+        ILogger<PaymentMethodService> logger, IClientContextReader clientContextReader)
     {
         _dbContext = bookShopDbContext;
         _logger = logger;
@@ -85,5 +85,10 @@ internal class PaymentMethodService : IPaymentMethodService
         _dbContext.PaymentMethods.Remove(paymentMethod);
         await _dbContext.SaveChangesAsync();
         _logger.LogInformation($"PaymentMethod with Id {paymentMethod.Id} removed successfully");
+    }
+
+    public async Task ChoosePaymentMethodType()
+    {
+
     }
 }

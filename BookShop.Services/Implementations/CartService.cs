@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using BookShop.Common.ClientService;
+using BookShop.Common.ClientService.Abstractions;
 using BookShop.Data;
 using BookShop.Services.Abstractions;
 using BookShop.Services.Models.CartItemModels;
@@ -13,9 +13,9 @@ internal class CartService : ICartService
     private readonly BookShopDbContext _dbContext;
     private readonly ILogger<CartService> _logger;
     private readonly IMapper _mapper;
-    private readonly ClientContextReader _clientContextReader;
+    private readonly IClientContextReader _clientContextReader;
 
-    public CartService(BookShopDbContext dbContext, ILogger<CartService> logger, IMapper mapper, ClientContextReader clientContextReader)
+    public CartService(BookShopDbContext dbContext, ILogger<CartService> logger, IMapper mapper, IClientContextReader clientContextReader)
     {
         _dbContext = dbContext;
         _logger = logger;

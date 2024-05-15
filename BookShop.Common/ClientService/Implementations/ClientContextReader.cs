@@ -1,6 +1,8 @@
-﻿namespace BookShop.Common.ClientService;
+﻿using BookShop.Common.ClientService.Abstractions;
 
-public class ClientContextReader
+namespace BookShop.Common.ClientService.Implementations;
+
+public class ClientContextReader : IClientContextReader
 {
     private readonly ClientContext _clientContext;
 

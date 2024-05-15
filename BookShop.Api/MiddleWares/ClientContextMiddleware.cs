@@ -1,4 +1,4 @@
-﻿using BookShop.Common.ClientService;
+﻿using BookShop.Common.ClientService.Abstractions;
 using BookShop.Common.Consts;
 using System.IdentityModel.Tokens.Jwt;
 
@@ -6,11 +6,11 @@ namespace BookShop.Api.MiddleWares;
 
 public class ClientContextMiddleware : IMiddleware
 {
-    private readonly ClientContextAccessor _clientContextAccessor;
+    private readonly IClientContextWriter _clientContextWriter;
 
-    public ClientContextMiddleware(ClientContextAccessor clientContextAccessor)
+    public ClientContextMiddleware(IClientContextWriter clientContextWriter)
     {
-        _clientContextAccessor = clientContextAccessor;
+        _clientContextWriter = clientContextWriter;
     }
 
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
@@ -42,7 +42,7 @@ public class ClientContextMiddleware : IMiddleware
                 throw new Exception("Unknown clientId");
             }
 
-            _clientContextAccessor.SetClientContextId(clientId);
+            _clientContextWriter.SetClientContextId(clientId);
         }
 
         await next(context);

@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper;
 using BookShop.Services.Models.WishListItemModels;
-using BookShop.Common.ClientService;
+using BookShop.Common.ClientService.Abstractions;
 
 namespace BookShop.Services.Implementations;
 
@@ -14,10 +14,10 @@ internal class WishListItemService : IWishListItemService
     private readonly BookShopDbContext _dbContext;
     private readonly ILogger<WishListItemService> _logger;
     private readonly IMapper _mapper;
-    private readonly ClientContextReader _clientContextReader;
+    private readonly IClientContextReader _clientContextReader;
 
     public WishListItemService(BookShopDbContext dbContext, ILogger<WishListItemService> logger, 
-        IMapper mapper, ClientContextReader clientContextReader)
+        IMapper mapper, IClientContextReader clientContextReader)
     {
         _dbContext = dbContext;
         _logger = logger;

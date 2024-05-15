@@ -1,6 +1,5 @@
 ﻿using BookShop.Api.MiddleWares;
 using BookShop.Api.Services.Implementations;
-using BookShop.Common.ClientService;
 using BookShop.Services.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;

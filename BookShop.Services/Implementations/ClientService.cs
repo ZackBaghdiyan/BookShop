@@ -7,18 +7,18 @@ using System.Security.Cryptography;
 using BookShop.Services.Abstractions;
 using BookShop.Services.Models.ClientModels;
 using AutoMapper;
-using BookShop.Common.ClientService;
 using BookShop.Services.Exceptions;
+using BookShop.Common.ClientService.Abstractions;
 
 internal class ClientService : IClientService
 {
     private readonly BookShopDbContext _dbContext;
     private readonly ILogger<ClientService> _logger;
     private readonly IMapper _mapper;
-    private readonly ClientContextReader _clientContextReader;
+    private readonly IClientContextReader _clientContextReader;
 
     public ClientService(BookShopDbContext bookShopDbContext, ILogger<ClientService> logger,
-        IMapper mapper, ClientContextReader clientContextReader)
+        IMapper mapper, IClientContextReader clientContextReader)
     {
         _dbContext = bookShopDbContext;
         _logger = logger;
